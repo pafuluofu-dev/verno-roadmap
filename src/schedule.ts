@@ -99,6 +99,27 @@ export function isDone(item: Item, done: DoneMap): boolean {
 /** Отложенные пользователем шаги: id → true */
 export type SkippedMap = Record<string, boolean>
 
+/** Пройдено единиц по шагу: id → число уроков (или процентов, если уроки не посчитаны) */
+export type ProgressMap = Record<string, number>
+
+/** Сколько единиц в шаге. Нет счётчика уроков — считаем в процентах */
+export function unitsOf(item: Item): number {
+  return item.units && item.units > 0 ? item.units : 100
+}
+
+/** Пройдено единиц: ручная правка перевешивает авторскую заготовку в data.ts */
+export function unitsDone(item: Item, progress: ProgressMap): number {
+  const raw = progress[item.id]
+  const value = Number.isFinite(raw) ? raw : item.unitsDone ?? 0
+  return Math.min(unitsOf(item), Math.max(0, Math.round(value)))
+}
+
+/** Доля шага, закрытая вручную (0–1). Отмеченный галочкой шаг закрыт целиком */
+export function progressOf(item: Item, done: DoneMap, progress: ProgressMap): number {
+  if (isDone(item, done)) return 1
+  return unitsDone(item, progress) / unitsOf(item)
+}
+
 /** Шаг участвует в расписании и в суммах часов */
 export function isScheduled(item: Item, settings: Settings, skipped: SkippedMap = {}): boolean {
   return item.kind !== 'milestone' && (!item.optional || settings.includeOptional) && !skipped[item.id]
@@ -109,7 +130,7 @@ export function isScheduled(item: Item, settings: Settings, skipped: SkippedMap 
  * Каждая неделя делится между треками по shareA; когда один трек закончен,
  * вся неделя уходит второму. Вехи закрываются датой предыдущего шага.
  */
-export function buildPlan(settings: Settings, done: DoneMap, skipped: SkippedMap = {}): Plan {
+export function buildPlan(settings: Settings, done: DoneMap, skipped: SkippedMap = {}, progress: ProgressMap = {}): Plan {
   const start = parseISO(settings.start)
   const uni = parseISO(UNI_DATE)
   const share = Math.min(100, Math.max(0, settings.shareA)) / 100
@@ -117,10 +138,12 @@ export function buildPlan(settings: Settings, done: DoneMap, skipped: SkippedMap
   const queues: Record<TrackId, ItemPlan[]> = { A: [], B: [] }
   for (const item of ITEMS) {
     const finished = isDone(item, done)
+    // частично пройденный курс занимает в расписании только остаток часов
+    const left = item.hours * (1 - progressOf(item, done, progress))
     queues[item.track].push({
       item,
       finish: null,
-      remaining: finished || !isScheduled(item, settings, skipped) ? 0 : item.hours,
+      remaining: finished || !isScheduled(item, settings, skipped) ? 0 : left,
     })
   }
 
@@ -190,7 +213,7 @@ export function buildPlan(settings: Settings, done: DoneMap, skipped: SkippedMap
     const items = queues[t]
     const counted = (p: ItemPlan) => isScheduled(p.item, settings, skipped) || isDone(p.item, done)
     const total = items.reduce((s, p) => s + (counted(p) ? p.item.hours : 0), 0)
-    const doneH = items.reduce((s, p) => s + (counted(p) && isDone(p.item, done) ? p.item.hours : 0), 0)
+    const doneH = items.reduce((s, p) => s + (counted(p) ? p.item.hours * progressOf(p.item, done, progress) : 0), 0)
     const finishDates = items.filter((p) => p.finish).map((p) => p.finish as Date)
     const finish = finishDates.length ? new Date(Math.max(...finishDates.map((d) => d.getTime()))) : null
     if (finish && finish > end) end = finish

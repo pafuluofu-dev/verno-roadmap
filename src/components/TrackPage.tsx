@@ -1,5 +1,5 @@
 import { TRACKS, type TrackId } from '../data'
-import type { DoneMap, Plan, Settings, SkippedMap } from '../schedule'
+import type { DoneMap, Plan, ProgressMap, Settings, SkippedMap } from '../schedule'
 import { ROUTE_META } from '../router'
 import { LoadChart } from './LoadChart'
 import { Timeline } from './Timeline'
@@ -11,11 +11,13 @@ interface TrackPageProps {
   done: DoneMap
   skipped: SkippedMap
   settings: Settings
+  progress: ProgressMap
   onToggle: (id: string) => void
   onSkip: (id: string) => void
+  onProgress: (id: string, value: number) => void
 }
 
-export function TrackPage({ trackId, plan, done, skipped, settings, onToggle, onSkip }: TrackPageProps) {
+export function TrackPage({ trackId, plan, done, skipped, settings, progress, onToggle, onSkip, onProgress }: TrackPageProps) {
   const otherId: TrackId = trackId === 'A' ? 'B' : 'A'
   const other = TRACKS.find((candidate) => candidate.id === otherId)
   const share = trackId === 'A' ? settings.shareA : 100 - settings.shareA
@@ -31,8 +33,10 @@ export function TrackPage({ trackId, plan, done, skipped, settings, onToggle, on
         done={done}
         settings={settings}
         skipped={skipped}
+        progress={progress}
         onToggle={onToggle}
         onSkip={onSkip}
+        onProgress={onProgress}
         headingLevel={1}
         afterHeader={<Timeline plan={plan} only={trackId} />}
       />

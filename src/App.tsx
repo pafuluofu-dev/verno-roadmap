@@ -1,15 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { TRACKS } from './data'
-import { buildPlan, type DoneMap, type Settings, type SkippedMap } from './schedule'
+import { ITEMS, TRACKS } from './data'
+import { buildPlan, unitsOf, type DoneMap, type ProgressMap, type Settings, type SkippedMap } from './schedule'
 import {
   loadCustomReminders,
   loadDismissedReminders,
   loadDone,
+  loadProgress,
   loadSettings,
   loadSkipped,
   saveCustomReminders,
   saveDismissedReminders,
   saveDone,
+  saveProgress,
   saveSettings,
   loadTheme,
   saveSkipped,
@@ -35,6 +37,7 @@ import { ROUTE_META, useRoute } from './router'
 export default function App() {
   const [done, setDone] = useState<DoneMap>(loadDone)
   const [skipped, setSkipped] = useState<SkippedMap>(loadSkipped)
+  const [progress, setProgressMap] = useState<ProgressMap>(loadProgress)
   const [settings, setSettings] = useState<Settings>(loadSettings)
   const [dismissedReminders, setDismissedReminders] = useState<Record<string, boolean>>(loadDismissedReminders)
   const [customReminders, setCustomReminders] = useState<CustomReminder[]>(loadCustomReminders)
@@ -46,6 +49,7 @@ export default function App() {
 
   useEffect(() => saveDone(done), [done])
   useEffect(() => saveSkipped(skipped), [skipped])
+  useEffect(() => saveProgress(progress), [progress])
   useEffect(() => saveSettings(settings), [settings])
   useEffect(() => saveDismissedReminders(dismissedReminders), [dismissedReminders])
   useEffect(() => saveCustomReminders(customReminders), [customReminders])
@@ -74,7 +78,7 @@ export default function App() {
     }
   }, [pendingReminderScroll, route])
 
-  const plan = useMemo(() => buildPlan(settings, done, skipped), [settings, done, skipped])
+  const plan = useMemo(() => buildPlan(settings, done, skipped, progress), [settings, done, skipped, progress])
 
   const toggleStep = (id: string) =>
     setDone((previous) => {
@@ -92,8 +96,19 @@ export default function App() {
       return next
     })
 
+  const setStepProgress = (id: string, value: number) => {
+    const item = ITEMS.find((candidate) => candidate.id === id)
+    if (!item) return
+    const next = Math.min(unitsOf(item), Math.max(0, Math.round(Number(value) || 0)))
+    // ноль записываем явно: без записи шаг откатится к заготовке из data.ts
+    setProgressMap((previous) => ({ ...previous, [id]: next }))
+  }
+
   const resetProgress = () => {
-    if (window.confirm('Снять все галочки? Настройки и отложенные шаги останутся.')) setDone({})
+    if (window.confirm('Снять все галочки и счётчики пройденного? Настройки и отложенные шаги останутся.')) {
+      setDone({})
+      setProgressMap({})
+    }
   }
 
   const reminders = useMemo(() => buildReminderViews(customReminders), [customReminders])
@@ -124,7 +139,7 @@ export default function App() {
     setPendingReminderScroll(true)
   }
 
-  const exportData = () => JSON.stringify({ v: 1, done, skipped, settings, customReminders, dismissedReminders })
+  const exportData = () => JSON.stringify({ v: 1, done, skipped, progress, settings, customReminders, dismissedReminders })
 
   const importData = (raw: string): boolean => {
     try {
@@ -132,6 +147,14 @@ export default function App() {
       if (!parsed || typeof parsed !== 'object') return false
       if (parsed.done && typeof parsed.done === 'object') setDone(parsed.done as DoneMap)
       if (parsed.skipped && typeof parsed.skipped === 'object') setSkipped(parsed.skipped as SkippedMap)
+      if (parsed.progress && typeof parsed.progress === 'object') {
+        const clean: ProgressMap = {}
+        for (const [id, value] of Object.entries(parsed.progress as Record<string, unknown>)) {
+          const n = Number(value)
+          if (Number.isFinite(n) && n >= 0) clean[id] = Math.round(n)
+        }
+        setProgressMap(clean)
+      }
       if (parsed.settings) setSettings(sanitizeSettings(parsed.settings))
       if (Array.isArray(parsed.customReminders))
         setCustomReminders(
@@ -194,7 +217,17 @@ export default function App() {
             </main>
           </>
         ) : (
-          <TrackPage trackId={route} plan={plan} done={done} skipped={skipped} settings={settings} onToggle={toggleStep} onSkip={toggleSkip} />
+          <TrackPage
+            trackId={route}
+            plan={plan}
+            done={done}
+            skipped={skipped}
+            settings={settings}
+            progress={progress}
+            onToggle={toggleStep}
+            onSkip={toggleSkip}
+            onProgress={setStepProgress}
+          />
         )}
       </div>
       {route !== 'home' && <OverallProgress plan={plan} />}
@@ -203,7 +236,10 @@ export default function App() {
           Часы работы = видео × коэффициент: курсы с кодом ×2, no-code и дизайн ×1,5, справочные ×1,2. Длительности — из библиотеки Udemy на 2 сентября 2026, цены услуг — с
           verno-dev.com. Бесплатные материалы (Битрикс, NextPizza, SQL, GetCourse) оценены приблизительно — поправь по факту.
         </p>
-        <p>Галочки и настройки хранятся в этом браузере (localStorage) и не синхронизируются между устройствами.</p>
+        <p>
+          Галочки, счётчики пройденного и настройки хранятся в этом браузере (localStorage) и не синхронизируются между устройствами — для переноса есть экспорт и импорт
+          ниже.
+        </p>
       </footer>
     </div>
   )

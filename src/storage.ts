@@ -1,8 +1,9 @@
-import { DEFAULT_SETTINGS, type DoneMap, type Settings, type SkippedMap } from './schedule'
+import { DEFAULT_SETTINGS, type DoneMap, type ProgressMap, type Settings, type SkippedMap } from './schedule'
 
 const DONE_KEY = 'verno-roadmap:done'
 const SETTINGS_KEY = 'verno-roadmap:settings'
 const SKIPPED_KEY = 'verno-roadmap:skipped'
+const PROGRESS_KEY = 'verno-roadmap:progress'
 const REMINDERS_DISMISSED_KEY = 'verno-roadmap:reminders-dismissed'
 const REMINDERS_CUSTOM_KEY = 'verno-roadmap:reminders-custom'
 const THEME_KEY = 'verno-roadmap:theme'
@@ -65,6 +66,32 @@ export function loadSkipped(): SkippedMap {
 export function saveSkipped(skipped: SkippedMap): void {
   try {
     localStorage.setItem(SKIPPED_KEY, JSON.stringify(skipped))
+  } catch {
+    /* см. выше */
+  }
+}
+
+export function loadProgress(): ProgressMap {
+  try {
+    const raw = localStorage.getItem(PROGRESS_KEY)
+    if (!raw) return {}
+    const parsed = JSON.parse(raw)
+    if (!parsed || typeof parsed !== 'object') return {}
+    const clean: ProgressMap = {}
+    for (const [id, value] of Object.entries(parsed as Record<string, unknown>)) {
+      const n = Number(value)
+      // ноль хранится наравне с остальными: он значит «сброшено вручную», а не «нет записи»
+      if (Number.isFinite(n) && n >= 0) clean[id] = Math.round(n)
+    }
+    return clean
+  } catch {
+    return {}
+  }
+}
+
+export function saveProgress(progress: ProgressMap): void {
+  try {
+    localStorage.setItem(PROGRESS_KEY, JSON.stringify(progress))
   } catch {
     /* см. выше */
   }
