@@ -20,6 +20,19 @@
   color: var(--color-track-b-text);
 }
 
+.badge--value-high {
+  color: var(--color-value-high);
+}
+
+.badge--value-mid {
+  color: var(--color-warn);
+}
+
+.badge--value-low {
+  color: var(--color-text-muted);
+  border-style: dashed;
+}
+
 .badge--optional {
   color: var(--color-text-muted);
 }

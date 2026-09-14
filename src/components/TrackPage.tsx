@@ -26,7 +26,8 @@ export function TrackPage({ trackId, plan, done, skipped, settings, progress, on
     <main className="track-page">
       <p className="track-page__context">
         Этому треку — <strong>{share} % недели</strong> при {settings.hoursBefore} ч/нед (после 9 фев 2027 — {settings.hoursAfter} ч/нед). Кнопка «отложить» убирает шаг из
-        расписания — даты сокращаются, «вернуть в план» возвращает. <a href={ROUTE_META.home.hash}>Темп и стартовый трек — на обзоре</a>.
+        расписания — даты сокращаются, «вернуть в план» возвращает. «Польза» у шага — оценка вклада в цель трека за потраченные часы: от 80 % брать обязательно, ниже
+        50 % — кандидат на «отложить». <a href={ROUTE_META.home.hash}>Темп и стартовый трек — на обзоре</a>.
       </p>
       <TrackSection
         trackPlan={plan.tracks[trackId]}

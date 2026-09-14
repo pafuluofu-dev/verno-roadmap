@@ -254,6 +254,25 @@ function sourceLabel(url: string): string {
   }
 }
 
+/** Родительный падеж после «из N»: 61 урока, но 129 уроков */
+const UNIT_ONE: Record<string, string> = { уроков: 'урока', шагов: 'шага', задач: 'задачи' }
+
+function unitLabel(total: number, word: string): string {
+  const single = total % 10 === 1 && total % 100 !== 11
+  return single ? UNIT_ONE[word] ?? word : word
+}
+
+/** Польза шага для цели трека: зелёный — брать обязательно, янтарный — по остаточному принципу, серый — можно не брать */
+function ValueBadge({ value }: { value?: number }) {
+  if (typeof value !== 'number') return null
+  const band = value >= 80 ? 'high' : value >= 50 ? 'mid' : 'low'
+  return (
+    <span className={`badge badge--value-${band}`} title="Насколько шаг приближает к цели трека за свои часы">
+      польза {value} %
+    </span>
+  )
+}
+
 function StepSource({ url }: { url?: string }) {
   if (!url) return null
   return (
@@ -304,7 +323,7 @@ function StepProgress({ item, value, onProgress }: { item: Item; value: number; 
           value={value}
           onChange={(event) => onProgress(item.id, Number(event.target.value))}
         />
-        <span className="step__progress-total">{item.units ? `из ${total} ${item.unitWord ?? 'уроков'} · ${percent} %` : '%'}</span>
+        <span className="step__progress-total">{item.units ? `из ${total} ${unitLabel(total, item.unitWord ?? 'уроков')} · ${percent} %` : '%'}</span>
         {value > 0 && (
           <button type="button" className="link-button step__progress-reset" onClick={() => onProgress(item.id, 0)}>
             сбросить
@@ -329,6 +348,7 @@ function StepItem({ step, checked, scheduled, isSkipped, unitsCompleted, onToggl
           {item.title}
           {item.meta && <span className="step__meta"> · {item.meta}</span>}
           <span className="badge badge--skipped">отложено</span>
+          <ValueBadge value={item.value} />
         </p>
         <StepSource url={item.url} />
         <p className="step__hours">
@@ -362,6 +382,7 @@ function StepItem({ step, checked, scheduled, isSkipped, unitsCompleted, onToggl
         {item.kind === 'free' && <span className="badge badge--free">бесплатно</span>}
         {item.kind === 'practice' && <span className="badge badge--practice">практика</span>}
         {item.optional && <span className="badge badge--optional">по желанию</span>}
+        <ValueBadge value={item.value} />
       </label>
       <StepSource url={item.url} />
       <details className="step__details">
