@@ -16,7 +16,6 @@
   --color-track-b-surface: #004466;
   --color-success: #14ca74;
   --color-warn: #f5a524;
-  --color-value-high: #14ca74;
   --color-focus: #00c2ff;
   --color-on-accent: #ffffff;
   --color-border-input: #4a5568;
@@ -66,10 +65,9 @@
   --color-track-b: #177999;
   --color-track-b-text: #135e80;
   --color-track-b-surface: #e6f9ff;
-  --color-success: #0f9c5b;
+  /* затемнён против исходного #0f9c5b: тот давал 3.4 на светлом фоне при норме 4.5 для мелкого текста */
+  --color-success: #0a7a46;
   --color-warn: #9a6700;
-  /* отдельный от success: на светлом фоне его зелёный даёт 3.4 при норме 4.5 */
-  --color-value-high: #0a7a46;
   --color-focus: #177999;
   --color-on-accent: #ffffff;
   --color-border-input: #7e89ac;

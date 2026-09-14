@@ -21,7 +21,7 @@
 }
 
 .badge--value-high {
-  color: var(--color-value-high);
+  color: var(--color-success);
 }
 
 .badge--value-mid {
