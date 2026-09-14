@@ -20,7 +20,7 @@
   font-family: var(--font-family-mono);
   font-size: var(--font-size-xs);
   text-align: center;
-  color: var(--color-on-accent);
+  color: var(--color-on-track);
 }
 
 .milestone-legend__number--track-a {

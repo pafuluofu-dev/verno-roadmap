@@ -91,7 +91,7 @@
   gap: 0.125rem;
   padding: var(--spacing-sm) 0.75rem;
   background: var(--color-background);
-  border: var(--border-width) solid var(--color-border);
+  border: var(--border-width) solid var(--color-border-control);
   border-radius: var(--radius-md);
   text-align: start;
   cursor: pointer;

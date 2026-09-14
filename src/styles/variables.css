@@ -18,7 +18,12 @@
   --color-warn: #f5a524;
   --color-focus: #00c2ff;
   --color-on-accent: #ffffff;
-  --color-border-input: #4a5568;
+  /* текст на сплошной заливке цветом трека: в тёмной теме треки яркие, белым по ним не прочитать */
+  --color-on-track: #081028;
+  /* осветлён против #4a5568: тот давал 2.5 на фоне страницы при норме 3 для границ полей */
+  --color-border-input: #6b7a99;
+  /* рамка интерактивных элементов — она и есть граница кнопки, поэтому светлее декоративной */
+  --color-border-control: #606a87;
   --gradient-primary: linear-gradient(128.49deg, #cb3cff 19.86%, #7f25fb 68.34%);
   /* Для кнопок с белым текстом: сдвинут к фиолетовому, чтобы контраст ≥ 4.5 по всей длине */
   --gradient-primary-strong: linear-gradient(128.49deg, #a531fd 19.86%, #7f25fb 68.34%);
@@ -70,5 +75,8 @@
   --color-warn: #9a6700;
   --color-focus: #177999;
   --color-on-accent: #ffffff;
+  --color-on-track: #ffffff;
   --color-border-input: #7e89ac;
+  /* затемнён против #d1dbf9: тот давал 1.3 при норме 3 */
+  --color-border-control: #7d89ae;
 }
