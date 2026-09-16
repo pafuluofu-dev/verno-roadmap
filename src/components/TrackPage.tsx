@@ -1,6 +1,6 @@
 import { TRACKS, type TrackId } from '../data'
 import type { DoneMap, Plan, ProgressMap, Settings, SkippedMap } from '../schedule'
-import { ROUTE_META } from '../router'
+import { ROUTE_META, skippedRouteOf } from '../router'
 import { LoadChart } from './LoadChart'
 import { Timeline } from './Timeline'
 import { TrackSection } from './TrackSection'
@@ -42,6 +42,10 @@ export function TrackPage({ trackId, plan, done, skipped, settings, progress, on
         afterHeader={<Timeline plan={plan} only={trackId} />}
       />
       <LoadChart plan={plan} settings={settings} only={trackId} />
+      <p className="track-page__other">
+        Что из библиотеки не попало в этот трек и стоит ли возвращаться:{' '}
+        <a href={ROUTE_META[skippedRouteOf(trackId)].hash}>мимо плана — трек {trackId}</a>
+      </p>
       {other && (
         <p className="track-page__other">
           Второй трек: <a href={ROUTE_META[otherId].hash}>Трек {otherId} — {other.name}</a>

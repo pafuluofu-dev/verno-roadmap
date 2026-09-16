@@ -1,0 +1,157 @@
+/* Страница «мимо плана»: список курсов вне плана с вероятностью возврата и условием */
+.skipped__heading {
+  font-size: var(--font-size-title);
+  line-height: 1.15;
+}
+
+.skipped__group {
+  margin-block-start: var(--spacing-xl);
+}
+
+.skipped__group-title {
+  font-size: var(--font-size-xl);
+}
+
+.skipped__group-count {
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+
+.skipped__list {
+  display: grid;
+  margin-block-start: 0.375rem;
+  list-style: none;
+}
+
+.skipped__item {
+  display: grid;
+  gap: 0.25rem 0.75rem;
+  padding-block: var(--spacing-sm);
+  border-block-start: var(--border-width) dotted var(--color-border);
+  font-size: var(--font-size-md);
+}
+
+.skipped__item:first-child {
+  border-block-start: 0;
+}
+
+.skipped__title {
+  font-weight: 500;
+}
+
+.skipped__meta {
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+
+.skipped__badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+/* Вероятность вернуться: цвет по порогам, как у бейджа пользы на треке */
+.skipped__value {
+  display: inline-block;
+  min-width: 3rem;
+  padding: 0 0.3125rem;
+  border: var(--border-width) solid currentColor;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.04em;
+  text-align: center;
+}
+
+.skipped__value--low {
+  color: var(--color-text-muted);
+  border-style: dashed;
+}
+
+.skipped__value--mid {
+  color: var(--color-text);
+}
+
+.skipped__value--high {
+  color: var(--color-track-a-text);
+}
+
+.skipped--b .skipped__value--high {
+  color: var(--color-track-b-text);
+}
+
+/* Что делать с курсом */
+.skipped__badge {
+  display: inline-block;
+  padding: 0 0.3125rem;
+  border: var(--border-width) solid currentColor;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.skipped__badge--later {
+  color: var(--color-success);
+}
+
+.skipped__badge--on-demand {
+  color: var(--color-warn);
+}
+
+.skipped__badge--never {
+  color: var(--color-text-muted);
+  border-style: dashed;
+}
+
+.skipped__why {
+  color: var(--color-text-muted);
+}
+
+.skipped__trigger-label {
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.skipped__source {
+  font-size: var(--font-size-sm);
+}
+
+.skipped__link {
+  color: var(--color-text-muted);
+  text-decoration: underline;
+  text-underline-offset: 0.125rem;
+}
+
+.skipped__link:hover {
+  color: var(--color-text);
+}
+
+.skipped__other {
+  margin-block-start: var(--spacing-xl);
+  color: var(--color-text-muted);
+}
+
+@media (min-width: 48rem) {
+  .skipped__item {
+    grid-template-columns: 1fr auto;
+    align-items: start;
+  }
+
+  .skipped__badges {
+    grid-column: 2;
+    grid-row: 1;
+    justify-content: end;
+  }
+
+  .skipped__why,
+  .skipped__trigger,
+  .skipped__source {
+    grid-column: 1 / -1;
+  }
+}

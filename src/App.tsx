@@ -29,7 +29,7 @@ import { Timeline } from './components/Timeline'
 import { TrackCard } from './components/TrackCard'
 import { TrackPage } from './components/TrackPage'
 import { OverallProgress } from './components/OverallProgress'
-import { SkippedSection } from './components/SkippedSection'
+import { SkippedPage } from './components/SkippedPage'
 import { BackupSection } from './components/BackupSection'
 import { buildReminderViews, countDueReminders, ReminderBanner, RemindersSection } from './components/Reminders'
 import { ROUTE_META, useRoute } from './router'
@@ -213,9 +213,19 @@ export default function App() {
                 onDelete={deleteReminder}
               />
               <BackupSection onExport={exportData} onImport={importData} />
-              <SkippedSection />
+              <section className="page-section" aria-labelledby="skipped-links-title">
+                <div className="page-section__header">
+                  <h2 id="skipped-links-title">Мимо плана</h2>
+                  <p className="section-lead">
+                    Курсы из библиотеки, которые не стали шагами, — с вероятностью, что понадобятся, и условием возврата:{' '}
+                    <a href={ROUTE_META.skippedA.hash}>фриланс</a> · <a href={ROUTE_META.skippedB.hash}>fullstack</a>.
+                  </p>
+                </div>
+              </section>
             </main>
           </>
+        ) : route === 'skippedA' || route === 'skippedB' ? (
+          <SkippedPage trackId={route === 'skippedA' ? 'A' : 'B'} />
         ) : (
           <TrackPage
             trackId={route}

@@ -1,15 +1,23 @@
 import { useEffect, useState } from 'react'
 import type { TrackId } from './data'
 
-export type Route = 'home' | TrackId
+/** Страницы «мимо плана» — по одной на трек */
+export type SkippedRoute = 'skippedA' | 'skippedB'
+export type Route = 'home' | TrackId | SkippedRoute
 
 export const ROUTE_META: Record<Route, { hash: string; title: string }> = {
   home: { hash: '#/', title: 'Маршрут verno/dev' },
   A: { hash: '#/track-a', title: 'Трек A — фриланс · Маршрут verno/dev' },
   B: { hash: '#/track-b', title: 'Трек B — fullstack · Маршрут verno/dev' },
+  skippedA: { hash: '#/skipped-a', title: 'Мимо плана — фриланс · Маршрут verno/dev' },
+  skippedB: { hash: '#/skipped-b', title: 'Мимо плана — fullstack · Маршрут verno/dev' },
 }
 
+export const skippedRouteOf = (track: TrackId): SkippedRoute => (track === 'A' ? 'skippedA' : 'skippedB')
+
 function parseHash(hash: string): Route {
+  if (hash.startsWith(ROUTE_META.skippedA.hash)) return 'skippedA'
+  if (hash.startsWith(ROUTE_META.skippedB.hash)) return 'skippedB'
   if (hash.startsWith(ROUTE_META.A.hash)) return 'A'
   if (hash.startsWith(ROUTE_META.B.hash)) return 'B'
   return 'home'

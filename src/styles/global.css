@@ -22,6 +22,6 @@
 @import './components/stage.css';
 @import './components/overall-progress.css';
 @import './components/habit-list.css';
-@import './components/skipped-list.css';
+@import './components/skipped.css';
 @import './utilities/link-button.css';
 @import './utilities/visually-hidden.css';
