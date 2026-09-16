@@ -58,7 +58,7 @@ export default function App() {
     if (theme === 'light') document.documentElement.setAttribute('data-theme', 'light')
     else document.documentElement.removeAttribute('data-theme')
     saveTheme(theme)
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'light' ? '#f7fafc' : '#081028')
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'light' ? '#f6f8f3' : '#0d0d0d')
   }, [theme])
 
   useEffect(() => {

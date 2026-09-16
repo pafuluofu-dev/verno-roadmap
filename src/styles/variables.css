@@ -1,32 +1,30 @@
-/* Палитра DashDark X (themewagon.github.io/dashdarkX): чернильно-синие фоны,
-   пурпурный primary с фирменным градиентом, циановый secondary.
-   Трек A = primary (пурпур), трек B = secondary (циан).
-   Тема всегда тёмная — как у оригинала. */
+/* Палитра «лайм на чёрном»: почти чёрные фоны, лаймовый акцент, белый второй цвет.
+   Трек A = лайм, трек B = белый. Кнопки — лайм с чёрным текстом.
+   Тема по умолчанию тёмная, светлая — те же оттенки на белом, лайм затемнён до нормы контраста. */
 :root {
-  --color-background: #081028;
-  --color-surface: #0b1739;
-  --color-text: #ffffff;
-  --color-text-muted: #aeb9e1;
-  --color-border: #343b4f;
-  --color-track-a: #cb3cff;
-  --color-track-a-text: #e0b5ff;
-  --color-track-a-surface: #3b004d;
-  --color-track-b: #00c2ff;
-  --color-track-b-text: #b3ecff;
-  --color-track-b-surface: #004466;
-  --color-success: #14ca74;
+  --color-background: #0d0d0d;
+  --color-surface: #181818;
+  --color-text: #f5f5f5;
+  --color-text-muted: #a9a9a9;
+  --color-border: #2c2c2c;
+  --color-track-a: #8be24a;
+  --color-track-a-text: #a6ea71;
+  --color-track-a-surface: #1c2f10;
+  --color-track-b: #f2f2f2;
+  --color-track-b-text: #f2f2f2;
+  --color-track-b-surface: #2a2a2a;
+  --color-success: #8be24a;
   --color-warn: #f5a524;
-  --color-focus: #00c2ff;
-  --color-on-accent: #ffffff;
+  --color-focus: #8be24a;
+  --color-on-accent: #0d0d0d;
   /* текст на сплошной заливке цветом трека: в тёмной теме треки яркие, белым по ним не прочитать */
-  --color-on-track: #081028;
-  /* осветлён против #4a5568: тот давал 2.5 на фоне страницы при норме 3 для границ полей */
-  --color-border-input: #6b7a99;
+  --color-on-track: #0d0d0d;
+  --color-border-input: #6e6e6e;
   /* рамка интерактивных элементов — она и есть граница кнопки, поэтому светлее декоративной */
-  --color-border-control: #606a87;
-  --gradient-primary: linear-gradient(128.49deg, #cb3cff 19.86%, #7f25fb 68.34%);
-  /* Для кнопок с белым текстом: сдвинут к фиолетовому, чтобы контраст ≥ 4.5 по всей длине */
-  --gradient-primary-strong: linear-gradient(128.49deg, #a531fd 19.86%, #7f25fb 68.34%);
+  --color-border-control: #6e6e6e;
+  --gradient-primary: linear-gradient(128.49deg, #8be24a 19.86%, #7fd63f 68.34%);
+  /* Кнопки: чёрный текст на лайме, оба края градиента ≥ 4.5 */
+  --gradient-primary-strong: linear-gradient(128.49deg, #8be24a 19.86%, #7fd63f 68.34%);
 
   --font-family-display: 'Mona Sans', 'Work Sans', system-ui, sans-serif;
   --font-family-primary: 'Mona Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
@@ -59,24 +57,24 @@
 
 /* Светлая тема — по переключателю в шапке, те же оттенки на светлых нейтралах */
 :root[data-theme='light'] {
-  --color-background: #f7fafc;
+  --color-background: #f6f8f3;
   --color-surface: #ffffff;
-  --color-text: #171923;
-  --color-text-muted: #4a5568;
-  --color-border: #d1dbf9;
-  --color-track-a: #a324cc;
-  --color-track-a-text: #7d1a99;
-  --color-track-a-surface: #f4e3ff;
-  --color-track-b: #177999;
-  --color-track-b-text: #135e80;
-  --color-track-b-surface: #e6f9ff;
-  /* затемнён против исходного #0f9c5b: тот давал 3.4 на светлом фоне при норме 4.5 для мелкого текста */
-  --color-success: #0a7a46;
+  --color-text: #111111;
+  --color-text-muted: #525c4d;
+  --color-border: #d8dfd0;
+  --color-track-a: #3d7d12;
+  --color-track-a-text: #2f6b0a;
+  --color-track-a-surface: #e6f4d8;
+  --color-track-b: #3a3a3a;
+  --color-track-b-text: #2a2a2a;
+  --color-track-b-surface: #ececec;
+  --color-success: #2f6b0a;
   --color-warn: #9a6700;
-  --color-focus: #177999;
+  --color-focus: #2f6b0a;
   --color-on-accent: #ffffff;
   --color-on-track: #ffffff;
-  --color-border-input: #7e89ac;
-  /* затемнён против #d1dbf9: тот давал 1.3 при норме 3 */
-  --color-border-control: #7d89ae;
+  --color-border-input: #7c8871;
+  --color-border-control: #7c8871;
+  --gradient-primary: linear-gradient(128.49deg, #3d7d12 19.86%, #2f6b0a 68.34%);
+  --gradient-primary-strong: linear-gradient(128.49deg, #3d7d12 19.86%, #2f6b0a 68.34%);
 }
