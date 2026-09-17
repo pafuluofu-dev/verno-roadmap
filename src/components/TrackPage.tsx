@@ -2,6 +2,7 @@ import { TRACKS, type TrackId } from '../data'
 import type { DoneMap, Plan, ProgressMap, Settings, SkippedMap } from '../schedule'
 import { ROUTE_META, skippedRouteOf } from '../router'
 import { LoadChart } from './LoadChart'
+import { NowPanel } from './NowPanel'
 import { Timeline } from './Timeline'
 import { TrackSection } from './TrackSection'
 
@@ -39,7 +40,12 @@ export function TrackPage({ trackId, plan, done, skipped, settings, progress, on
         onSkip={onSkip}
         onProgress={onProgress}
         headingLevel={1}
-        afterHeader={<Timeline plan={plan} only={trackId} />}
+        afterHeader={
+          <>
+            <NowPanel trackPlan={plan.tracks[trackId]} done={done} settings={settings} skipped={skipped} progress={progress} />
+            <Timeline plan={plan} only={trackId} />
+          </>
+        }
       />
       <LoadChart plan={plan} settings={settings} only={trackId} />
       <p className="track-page__other">

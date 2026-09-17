@@ -17,6 +17,7 @@
 @import './components/load-chart.css';
 @import './components/timeline.css';
 @import './components/milestone-legend.css';
+@import './components/now.css';
 @import './components/track.css';
 @import './components/step.css';
 @import './components/stage.css';

@@ -1,0 +1,78 @@
+/* Блок «Сейчас»: один текущий шаг трека над списком — что делать сегодня */
+.now {
+  display: grid;
+  gap: 0.25rem;
+  margin-block: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-inline-start: 3px solid var(--color-border-control);
+  border-radius: var(--radius-md);
+}
+
+.track--a .now {
+  border-inline-start-color: var(--color-track-a);
+}
+
+.track--b .now {
+  border-inline-start-color: var(--color-track-b);
+}
+
+.now__title {
+  font-size: var(--font-size-xl);
+  line-height: 1.25;
+}
+
+.now__meta {
+  font-size: var(--font-size-md);
+  color: var(--color-text-muted);
+}
+
+.now__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.75rem;
+  margin-block-start: var(--spacing-xs);
+  font-family: var(--font-family-mono);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.now__fact {
+  white-space: nowrap;
+}
+
+.now__source {
+  margin-block-start: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+}
+
+.now__link {
+  color: var(--color-track-a-text);
+}
+
+.track--b .now__link {
+  color: var(--color-track-b-text);
+}
+
+.now__rule {
+  margin-block-start: var(--spacing-sm);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.now__next {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.now__next-title {
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+@media (min-width: 48rem) {
+  .now__facts {
+    gap: 0.25rem var(--spacing-md);
+  }
+}
