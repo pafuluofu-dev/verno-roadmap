@@ -1,0 +1,8 @@
+# Маршрут verno/dev — личный трекер: страницы не для поисковой выдачи (в index.html стоит noindex).
+# Машиночитаемый план для ИИ-ассистентов — /plan.md, его описание — /llms.txt.
+User-agent: *
+Disallow: /
+Allow: /plan.md
+Allow: /llms.txt
+
+Sitemap: https://pafuluofu-dev.github.io/verno-roadmap/sitemap.xml

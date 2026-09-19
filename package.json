@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "plan": "node scripts/generate-plan.mjs",
+    "build": "npm run plan && tsc --noEmit && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
