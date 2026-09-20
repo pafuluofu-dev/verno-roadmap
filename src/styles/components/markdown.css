@@ -1,0 +1,96 @@
+/* Разметка внутри заметки: заголовки, абзацы, списки, выделенные блоки, таблицы и разделитель —
+   те же правила .note__*, что рисуют конспекты в math-roadmap. Цвет жирного задаёт notebook.css. */
+/* Заголовок темы внутри группы — главная точка опоры при листании,
+   поэтому крупнее прочего, с карамельной линией слева и подчёркиванием снизу */
+.note__heading {
+  margin-block: var(--spacing-xl) var(--spacing-md);
+  padding-inline-start: 0.625rem;
+  padding-block-end: var(--spacing-xs);
+  border-inline-start: 3px solid var(--color-track-a);
+  border-block-end: var(--border-width) solid var(--color-border);
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  scroll-margin-block-start: 4rem;
+}
+
+.note__heading:first-child {
+  margin-block-start: var(--spacing-sm);
+}
+
+/* Подзаголовок раздела: карамельный, полужирный и на строчку выше обычного текста */
+.note__subheading {
+  margin-block: var(--spacing-lg) var(--spacing-sm);
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--color-track-a-text);
+}
+
+.note__paragraph {
+  margin-block: var(--spacing-sm);
+  line-height: 1.6;
+}
+
+.note__list {
+  margin-block: var(--spacing-sm);
+  padding-inline-start: 1.25rem;
+  line-height: 1.6;
+}
+
+.note__list li + li {
+  margin-block-start: var(--spacing-xs);
+}
+
+.note__list--ordered {
+  list-style: decimal;
+}
+
+/* Определения и теоремы */
+.note__callout {
+  margin-block: var(--spacing-md);
+  padding: 0.625rem 0.875rem;
+  background: var(--color-background);
+  border-inline-start: 3px solid var(--color-track-a);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+}
+
+.note__callout > :first-child {
+  margin-block-start: 0;
+}
+
+.note__callout > :last-child {
+  margin-block-end: 0;
+}
+
+/* Широкая таблица прокручивается внутри себя, а не тянет страницу */
+.note__table-scroll {
+  margin-block: var(--spacing-md);
+  overflow-x: auto;
+}
+
+.note__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-md);
+}
+
+.note__table th,
+.note__table td {
+  padding: 0.375rem 0.625rem;
+  border: var(--border-width) solid var(--color-border);
+  text-align: start;
+  vertical-align: top;
+}
+
+.note__table th {
+  background: var(--color-background);
+  font-weight: 600;
+}
+
+.note__rule {
+  margin-block: var(--spacing-lg);
+  border: 0;
+  border-block-start: var(--border-width) solid var(--color-border);
+}

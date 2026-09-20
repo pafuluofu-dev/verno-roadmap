@@ -1,3 +1,5 @@
+import { useRef } from 'react'
+import { useScrollFade } from './useScrollFade'
 import type { TrackId } from '../data'
 import type { Plan } from '../schedule'
 import type { Theme } from '../storage'
@@ -24,11 +26,15 @@ export function AppNav({ route, plan, dueReminders, onBellClick, theme, onToggle
     { route: 'home', label: 'Обзор' },
     { route: 'A', label: 'Трек A', suffix: '· фриланс', percent: percentOf('A') },
     { route: 'B', label: 'Трек B', suffix: '· fullstack', percent: percentOf('B') },
+    { route: 'notebook', label: 'Заметки' },
   ]
 
+  const listRef = useRef<HTMLUListElement>(null)
+  const fade = useScrollFade(listRef)
+
   return (
-    <nav className="app-nav" aria-label="Разделы плана">
-      <ul className="app-nav__list">
+    <nav className={`app-nav${fade.start ? ' app-nav--fade-start' : ''}${fade.end ? ' app-nav--fade-end' : ''}`} aria-label="Разделы плана">
+      <ul className="app-nav__list" ref={listRef}>
         {links.map((link) => (
           <li key={link.route}>
             <a className="app-nav__link" aria-current={route === link.route ? 'page' : undefined} href={ROUTE_META[link.route].hash}>

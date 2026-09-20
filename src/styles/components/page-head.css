@@ -1,0 +1,33 @@
+.page-head {
+  display: grid;
+  gap: var(--spacing-xs);
+  padding-block-end: var(--spacing-lg);
+  border-block-end: var(--border-width) solid var(--color-border);
+}
+
+.page-head__title {
+  font-size: clamp(1.4rem, 3vw, 1.9rem);
+  line-height: 1.2;
+}
+
+.page-head__lead {
+  color: var(--color-text-muted);
+  max-width: 70ch;
+}
+
+.page-head__counter {
+  font-family: var(--font-family-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--font-size-md);
+  color: var(--color-text-muted);
+}
+
+.page-head__counter strong {
+  color: var(--color-text);
+}
+
+/* Заглушка на время подгрузки отложенного раздела */
+.page-loading {
+  padding-block: var(--spacing-lg);
+  color: var(--color-text-muted);
+}

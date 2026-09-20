@@ -1,24 +1,28 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { ITEMS, TRACKS } from './data'
 import { buildPlan, unitsOf, type DoneMap, type ProgressMap, type Settings, type SkippedMap } from './schedule'
 import {
   loadCustomReminders,
   loadDismissedReminders,
   loadDone,
+  loadNotes,
   loadProgress,
   loadSettings,
   loadSkipped,
   saveCustomReminders,
   saveDismissedReminders,
   saveDone,
+  saveNotes,
   saveProgress,
   saveSettings,
   loadTheme,
   saveSkipped,
   saveTheme,
+  sanitizeNotes,
   sanitizeSettings,
   type CustomReminder,
   type Theme,
+  type UserNote,
 } from './storage'
 import { AppNav } from './components/AppNav'
 import { Hero } from './components/Hero'
@@ -34,6 +38,9 @@ import { BackupSection } from './components/BackupSection'
 import { buildReminderViews, countDueReminders, ReminderBanner, RemindersSection } from './components/Reminders'
 import { ROUTE_META, useRoute } from './router'
 
+// KaTeX весит ~260 КБ — тянем его только на страницу заметок, чтобы галочки на треках открывались мгновенно
+const NotebookPage = lazy(() => import('./components/NotebookPage').then((module) => ({ default: module.NotebookPage })))
+
 export default function App() {
   const [done, setDone] = useState<DoneMap>(loadDone)
   const [skipped, setSkipped] = useState<SkippedMap>(loadSkipped)
@@ -41,6 +48,7 @@ export default function App() {
   const [settings, setSettings] = useState<Settings>(loadSettings)
   const [dismissedReminders, setDismissedReminders] = useState<Record<string, boolean>>(loadDismissedReminders)
   const [customReminders, setCustomReminders] = useState<CustomReminder[]>(loadCustomReminders)
+  const [notes, setNotes] = useState<UserNote[]>(loadNotes)
   const [pendingReminderScroll, setPendingReminderScroll] = useState(false)
   const [theme, setTheme] = useState<Theme>(loadTheme)
   const route = useRoute()
@@ -53,6 +61,7 @@ export default function App() {
   useEffect(() => saveSettings(settings), [settings])
   useEffect(() => saveDismissedReminders(dismissedReminders), [dismissedReminders])
   useEffect(() => saveCustomReminders(customReminders), [customReminders])
+  useEffect(() => saveNotes(notes), [notes])
 
   useEffect(() => {
     if (theme === 'light') document.documentElement.setAttribute('data-theme', 'light')
@@ -139,7 +148,12 @@ export default function App() {
     setPendingReminderScroll(true)
   }
 
-  const exportData = () => JSON.stringify({ v: 1, done, skipped, progress, settings, customReminders, dismissedReminders })
+  const saveNote = (note: UserNote) =>
+    setNotes((previous) => (previous.some((entry) => entry.id === note.id) ? previous.map((entry) => (entry.id === note.id ? note : entry)) : [note, ...previous]))
+
+  const deleteNote = (id: string) => setNotes((previous) => previous.filter((entry) => entry.id !== id))
+
+  const exportData = () => JSON.stringify({ v: 1, done, skipped, progress, settings, customReminders, dismissedReminders, notes })
 
   const importData = (raw: string): boolean => {
     try {
@@ -168,6 +182,7 @@ export default function App() {
         )
       if (parsed.dismissedReminders && typeof parsed.dismissedReminders === 'object')
         setDismissedReminders(parsed.dismissedReminders as Record<string, boolean>)
+      if (Array.isArray(parsed.notes)) setNotes(sanitizeNotes(parsed.notes))
       return true
     } catch {
       return false
@@ -224,6 +239,10 @@ export default function App() {
               </section>
             </main>
           </>
+        ) : route === 'notebook' ? (
+          <Suspense fallback={<p className="page-loading">Загружаю заметки…</p>}>
+            <NotebookPage notes={notes} onSave={saveNote} onDelete={deleteNote} />
+          </Suspense>
         ) : route === 'skippedA' || route === 'skippedB' ? (
           <SkippedPage trackId={route === 'skippedA' ? 'A' : 'B'} />
         ) : (
@@ -247,7 +266,7 @@ export default function App() {
           цены услуг — с verno-dev.com. Бесплатные материалы (Битрикс, NextPizza, SQL, GetCourse) оценены приблизительно — поправь по факту.
         </p>
         <p>
-          Галочки, счётчики пройденного и настройки хранятся в этом браузере (localStorage) и не синхронизируются между устройствами — для переноса есть экспорт и импорт
+          Галочки, счётчики пройденного, настройки и заметки хранятся в этом браузере (localStorage) и не синхронизируются между устройствами — для переноса есть экспорт и импорт
           ниже.
         </p>
       </footer>

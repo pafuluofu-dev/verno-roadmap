@@ -1,4 +1,7 @@
 import { DEFAULT_SETTINGS, type DoneMap, type ProgressMap, type Settings, type SkippedMap } from './schedule'
+import type { UserNote } from './data/notebook'
+
+export type { UserNote } from './data/notebook'
 
 const DONE_KEY = 'verno-roadmap:done'
 const SETTINGS_KEY = 'verno-roadmap:settings'
@@ -6,6 +9,7 @@ const SKIPPED_KEY = 'verno-roadmap:skipped'
 const PROGRESS_KEY = 'verno-roadmap:progress'
 const REMINDERS_DISMISSED_KEY = 'verno-roadmap:reminders-dismissed'
 const REMINDERS_CUSTOM_KEY = 'verno-roadmap:reminders-custom'
+const NOTES_KEY = 'verno-roadmap:notes'
 const THEME_KEY = 'verno-roadmap:theme'
 
 export type Theme = 'dark' | 'light'
@@ -134,6 +138,39 @@ export function loadCustomReminders(): CustomReminder[] {
 export function saveCustomReminders(reminders: CustomReminder[]): void {
   try {
     localStorage.setItem(REMINDERS_CUSTOM_KEY, JSON.stringify(reminders))
+  } catch {
+    /* см. выше */
+  }
+}
+
+/* Заметки без дат (например, правленный руками файл копии) не выбрасываем — даты просто пустые */
+export function sanitizeNotes(raw: unknown): UserNote[] {
+  if (!Array.isArray(raw)) return []
+  return raw
+    .filter((entry): entry is UserNote => !!entry && typeof entry.id === 'string' && typeof entry.title === 'string' && typeof entry.body === 'string')
+    .map((entry) => ({
+      id: entry.id,
+      title: entry.title,
+      body: entry.body,
+      createdAt: typeof entry.createdAt === 'string' ? entry.createdAt : '',
+      updatedAt: typeof entry.updatedAt === 'string' ? entry.updatedAt : '',
+    }))
+}
+
+/** Свои заметки владельца — страница «Заметки» */
+export function loadNotes(): UserNote[] {
+  try {
+    const raw = localStorage.getItem(NOTES_KEY)
+    if (!raw) return []
+    return sanitizeNotes(JSON.parse(raw))
+  } catch {
+    return []
+  }
+}
+
+export function saveNotes(notes: UserNote[]): void {
+  try {
+    localStorage.setItem(NOTES_KEY, JSON.stringify(notes))
   } catch {
     /* см. выше */
   }

@@ -24,5 +24,9 @@
 @import './components/overall-progress.css';
 @import './components/habit-list.css';
 @import './components/skipped.css';
+@import './components/page-head.css';
+@import './components/math.css';
+@import './components/markdown.css';
+@import './components/notebook.css';
 @import './utilities/link-button.css';
 @import './utilities/visually-hidden.css';

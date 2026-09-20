@@ -1,6 +1,8 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
+// Стили KaTeX раньше своих, чтобы правки прокрутки формул в math.css побеждали
+import 'katex/dist/katex.min.css'
 import './styles/global.css'
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
