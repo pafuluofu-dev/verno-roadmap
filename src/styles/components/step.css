@@ -64,20 +64,19 @@
 
 .step--done .step__title {
   color: var(--color-text-muted);
+}
+
+/* Зачёркнуто только название: перечёркнутая meta в три строки читалась как серое пятно */
+.step--done .step__name {
   text-decoration: line-through;
   text-decoration-thickness: 1px;
 }
 
-.step--done .step__note {
-  opacity: 0.7;
-}
-
-.step--parked {
-  opacity: 0.62;
-}
-
+/* Шаг вне расписания: приглушён цветом заголовка, а не прозрачностью всей строки —
+   полупрозрачный мелкий текст падал ниже нормы контраста в обеих темах */
 .step--parked .step__title {
   font-weight: 500;
+  color: var(--color-text-muted);
 }
 
 .step__pause {
@@ -106,8 +105,10 @@
 }
 
 .step__source-link {
-  display: inline-flex;
-  align-items: center;
+  /* inline-block, а не inline-flex: у многострочной ссылки стрелка остаётся за последним словом, а не улетает к правому краю */
+  display: inline-block;
+  padding-block: 0.3125rem;
+  line-height: 1.4;
   min-height: 2rem;
   padding-inline-end: 0.375rem;
   color: var(--color-track-a-text);

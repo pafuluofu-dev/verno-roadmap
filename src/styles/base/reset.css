@@ -91,3 +91,12 @@ p {
     scroll-behavior: auto;
   }
 }
+
+/* Подсказка в пустом поле — тем же приглушённым цветом, что и подписи:
+   серый браузера по умолчанию на тёмной поверхности не дотягивал до нормы контраста */
+input::placeholder,
+textarea::placeholder {
+  color: var(--color-text-muted);
+  opacity: 1;
+  text-overflow: ellipsis;
+}

@@ -135,6 +135,38 @@
 .timeline__milestone-number {
   position: relative;
   font-family: var(--font-family-mono);
-  font-size: 0.625rem;
+  font-size: 0.6875rem;
   font-weight: 500;
+}
+
+/* Шкала шире экрана и прокручивается внутри .timeline__scroll; затухание у края обёртки
+   подсказывает «потяни» — без него обрезанный край выглядит ошибкой. Классы ставит useScrollFade. */
+.timeline__viewport {
+  position: relative;
+}
+
+.timeline__viewport::before,
+.timeline__viewport::after {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  width: 2.5rem;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.timeline__viewport::before {
+  inset-inline-start: 0;
+  background: linear-gradient(to right, var(--color-background), transparent);
+}
+
+.timeline__viewport::after {
+  inset-inline-end: 0;
+  background: linear-gradient(to left, var(--color-background), transparent);
+}
+
+.timeline__viewport--fade-start::before,
+.timeline__viewport--fade-end::after {
+  opacity: 1;
 }

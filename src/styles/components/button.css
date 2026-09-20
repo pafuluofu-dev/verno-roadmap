@@ -27,3 +27,12 @@
   border-color: transparent;
   filter: brightness(1.12);
 }
+
+/* Недоступная кнопка: приглушённый цвет и рамка вместо прозрачности —
+   полупрозрачная надпись падала ниже нормы контраста в светлой теме */
+.button:disabled {
+  color: var(--color-text-muted);
+  background: var(--color-background);
+  border-color: var(--color-border);
+  cursor: not-allowed;
+}

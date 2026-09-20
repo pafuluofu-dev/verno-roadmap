@@ -46,3 +46,11 @@
 .section-fold__lead {
   margin-block: var(--spacing-sm) var(--spacing-md);
 }
+
+/* Ниже 48rem колонка текста идёт во всю ширину, и кольцо лежит на ней: запас снизу,
+   чтобы последняя строка страницы не пряталась под кольцом */
+@media (max-width: 47.99rem) {
+  .container {
+    padding-block-end: 6rem;
+  }
+}

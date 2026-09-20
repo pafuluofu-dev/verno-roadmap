@@ -69,8 +69,11 @@
   border-block-start: 0;
 }
 
-.reminder-list__item--hidden {
-  opacity: 0.55;
+/* Скрытое напоминание: зачёркнутый приглушённый заголовок вместо прозрачности всей строки */
+.reminder-list__item--hidden .reminder-list__title {
+  color: var(--color-text-muted);
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
 }
 
 .reminder-list__date {

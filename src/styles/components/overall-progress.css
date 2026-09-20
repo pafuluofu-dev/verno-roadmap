@@ -21,9 +21,10 @@
   border-color: var(--color-text-muted);
 }
 
+/* Отступ справа 1rem, а не 1.5: при 1280px поля страницы ровно 80px, и 64px кольца иначе ложились на даты в правой колонке */
 @media (min-width: 48rem) {
   .overall-progress {
     inset-block-end: var(--spacing-lg);
-    inset-inline-end: var(--spacing-lg);
+    inset-inline-end: var(--spacing-md);
   }
 }

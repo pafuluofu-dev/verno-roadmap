@@ -90,3 +90,31 @@
   text-align: center;
   color: var(--color-track-a-text);
 }
+
+/* Вкладки шире экрана прокручиваются; затухание у края подсказывает, что там есть ещё,
+   и гаснет, когда список докручен. Классы ставит useScrollFade по фактической прокрутке. */
+.app-nav::before,
+.app-nav::after {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  width: 2.5rem;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.app-nav::before {
+  inset-inline-start: 0;
+  background: linear-gradient(to right, var(--color-background), transparent);
+}
+
+.app-nav::after {
+  inset-inline-end: 0;
+  background: linear-gradient(to left, var(--color-background), transparent);
+}
+
+.app-nav--fade-start::before,
+.app-nav--fade-end::after {
+  opacity: 1;
+}

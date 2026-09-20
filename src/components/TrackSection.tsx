@@ -377,7 +377,7 @@ function StepItem({ step, checked, scheduled, isSkipped, unitsCompleted, onToggl
         onChange={() => onToggle(item.id)}
       />
       <label className="step__title" htmlFor={item.id}>
-        {item.title}
+        <span className="step__name">{item.title}</span>
         {item.meta && <span className="step__meta"> · {item.meta}</span>}
         {item.kind === 'free' && <span className="badge badge--free">бесплатно</span>}
         {item.kind === 'practice' && <span className="badge badge--practice">практика</span>}
