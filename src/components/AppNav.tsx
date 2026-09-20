@@ -1,14 +1,17 @@
 import { useRef } from 'react'
 import { useScrollFade } from './useScrollFade'
-import type { TrackId } from '../data'
+import type { Track } from '../data'
 import type { Plan } from '../schedule'
 import type { Theme } from '../storage'
-import { ROUTE_META, type Route } from '../router'
+import { ROUTE_META, trackHash, trackRouteOf, type Route } from '../router'
+import { isBuiltinTrack, shortName } from '../trackStyle'
 import { BellIcon, MoonIcon, SunIcon } from './icons'
 
 interface AppNavProps {
   route: Route
   plan: Plan
+  /** Все треки: свои идут в меню после встроенных */
+  tracks: Track[]
   /** Сколько напоминаний наступило и не скрыто */
   dueReminders: number
   onBellClick: () => void
@@ -16,17 +19,20 @@ interface AppNavProps {
   onToggleTheme: () => void
 }
 
-export function AppNav({ route, plan, dueReminders, onBellClick, theme, onToggleTheme }: AppNavProps) {
-  const percentOf = (trackId: TrackId) => {
+export function AppNav({ route, plan, tracks, dueReminders, onBellClick, theme, onToggleTheme }: AppNavProps) {
+  const percentOf = (trackId: string) => {
     const track = plan.tracks[trackId]
-    return track.total ? Math.round((track.done / track.total) * 100) : 0
+    return track && track.total ? Math.round((track.done / track.total) * 100) : 0
   }
 
-  const links: { route: Route; label: string; suffix?: string; percent?: number }[] = [
-    { route: 'home', label: 'Обзор' },
-    { route: 'A', label: 'Трек A', suffix: '· фриланс', percent: percentOf('A') },
-    { route: 'B', label: 'Трек B', suffix: '· fullstack', percent: percentOf('B') },
-    { route: 'notebook', label: 'Заметки' },
+  const links: { route: Route; hash: string; label: string; suffix?: string; percent?: number }[] = [
+    { route: 'home', hash: ROUTE_META.home.hash, label: 'Обзор' },
+    { route: 'A', hash: ROUTE_META.A.hash, label: 'Трек A', suffix: '· фриланс', percent: percentOf('A') },
+    { route: 'B', hash: ROUTE_META.B.hash, label: 'Трек B', suffix: '· fullstack', percent: percentOf('B') },
+    ...tracks
+      .filter((track) => !isBuiltinTrack(track.id))
+      .map((track) => ({ route: trackRouteOf(track.id), hash: trackHash(track.id), label: shortName(track.name), percent: percentOf(track.id) })),
+    { route: 'notebook', hash: ROUTE_META.notebook.hash, label: 'Заметки' },
   ]
 
   const listRef = useRef<HTMLUListElement>(null)
@@ -37,7 +43,7 @@ export function AppNav({ route, plan, dueReminders, onBellClick, theme, onToggle
       <ul className="app-nav__list" ref={listRef}>
         {links.map((link) => (
           <li key={link.route}>
-            <a className="app-nav__link" aria-current={route === link.route ? 'page' : undefined} href={ROUTE_META[link.route].hash}>
+            <a className="app-nav__link" aria-current={route === link.route ? 'page' : undefined} href={link.hash}>
               {link.label}
               {link.suffix && <span className="app-nav__suffix">{link.suffix}</span>}
               {link.percent !== undefined && <span className="app-nav__percent">{link.percent} %</span>}

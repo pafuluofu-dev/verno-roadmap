@@ -54,6 +54,10 @@
   border-block-start-color: var(--color-track-b);
 }
 
+.track--c .track__header {
+  border-block-start-color: var(--color-track-c);
+}
+
 .track__title {
   font-size: clamp(1.4rem, 3vw, 1.9rem);
   line-height: 1.2;

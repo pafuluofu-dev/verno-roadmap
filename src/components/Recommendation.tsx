@@ -1,12 +1,17 @@
 import { useMemo } from 'react'
+import type { Item, Track } from '../data'
 import { buildPlan, fmtDate, isDone, type DoneMap, type Plan, type Settings, type SkippedMap } from '../schedule'
 import { ROUTE_META } from '../router'
+import { trackShortLabel } from '../trackStyle'
 
 interface RecommendationProps {
   plan: Plan
   settings: Settings
   done: DoneMap
   skipped: SkippedMap
+  /** Итоговые шаги и все треки — варианты старта считаются по ним же, что и основной план */
+  items: Item[]
+  tracks: Track[]
   onChange: (settings: Settings) => void
 }
 
@@ -16,13 +21,15 @@ const START_OPTIONS = [
   { shareA: 30, label: 'Сначала рост', hint: 'A 30 % · B 70 %', recommended: false },
 ]
 
-export function Recommendation({ plan, settings, done, skipped, onChange }: RecommendationProps) {
+export function Recommendation({ plan, settings, done, skipped, items, tracks, onChange }: RecommendationProps) {
   const firstMilestoneA = plan.tracks.A.items.find((step) => step.item.kind === 'milestone' && !isDone(step.item, done) && step.finish)
   const apiMilestoneB = plan.tracks.B.items.find((step) => step.item.id === 'm-b-api')
+  // со своими треками остаток недели делится не между A и B, а между всеми остальными
+  const custom = tracks.length > 2
 
   const variants = useMemo(
-    () => START_OPTIONS.map((option) => ({ option, variant: buildPlan({ ...settings, shareA: option.shareA }, done, skipped) })),
-    [settings, done, skipped],
+    () => START_OPTIONS.map((option) => ({ option, variant: buildPlan({ ...settings, shareA: option.shareA }, done, skipped, {}, items, tracks) })),
+    [settings, done, skipped, items, tracks],
   )
 
   return (
@@ -70,9 +77,9 @@ export function Recommendation({ plan, settings, done, skipped, onChange }: Reco
                   {option.label}
                   {option.recommended && <span className="badge badge--recommended">рекомендую</span>}
                 </span>
-                <span className="start-option__hint">{option.hint}</span>
+                <span className="start-option__hint">{custom ? `A ${option.shareA} % · остальным ${100 - option.shareA} %` : option.hint}</span>
                 <span className="start-option__dates">
-                  A → {fmtDate(variant.tracks.A.finish)} · B → {fmtDate(variant.tracks.B.finish)}
+                  {tracks.map((track) => `${trackShortLabel(track)} → ${fmtDate(variant.tracks[track.id].finish)}`).join(' · ')}
                 </span>
               </button>
             )

@@ -98,6 +98,10 @@
   background: var(--color-track-b-surface);
 }
 
+.timeline__bar--track-c {
+  background: var(--color-track-c-surface);
+}
+
 .timeline__fill {
   display: block;
   height: 100%;
@@ -110,6 +114,10 @@
 
 .timeline__fill--track-b {
   background: var(--color-track-b);
+}
+
+.timeline__fill--track-c {
+  background: var(--color-track-c);
 }
 
 .timeline__milestone {

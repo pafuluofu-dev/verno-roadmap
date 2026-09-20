@@ -1,5 +1,6 @@
-import { TRACKS, type TrackId } from '../data'
-import type { DoneMap, Plan, ProgressMap, Settings, SkippedMap } from '../schedule'
+import { TRACKS, type Item, type Track } from '../data'
+import { shareOf, type DoneMap, type Plan, type ProgressMap, type Settings, type SkippedMap } from '../schedule'
+import type { PlanEdits } from '../planEdits'
 import { ROUTE_META, skippedRouteOf } from '../router'
 import { LoadChart } from './LoadChart'
 import { NowPanel } from './NowPanel'
@@ -7,7 +8,9 @@ import { Timeline } from './Timeline'
 import { TrackSection } from './TrackSection'
 
 interface TrackPageProps {
-  trackId: TrackId
+  track: Track
+  /** Все треки — встроенные и свои: для доли недели и календаря */
+  tracks: Track[]
   plan: Plan
   done: DoneMap
   skipped: SkippedMap
@@ -16,12 +19,20 @@ interface TrackPageProps {
   onToggle: (id: string) => void
   onSkip: (id: string) => void
   onProgress: (id: string, value: number) => void
+  /** Правки этого трека, его исходные шаги и куда сохранять */
+  edits: PlanEdits
+  baseItems: Item[]
+  onEdits: (edits: PlanEdits) => void
+  /** Только у своих треков */
+  onDeleteTrack?: () => void
 }
 
-export function TrackPage({ trackId, plan, done, skipped, settings, progress, onToggle, onSkip, onProgress }: TrackPageProps) {
-  const otherId: TrackId = trackId === 'A' ? 'B' : 'A'
-  const other = TRACKS.find((candidate) => candidate.id === otherId)
-  const share = trackId === 'A' ? settings.shareA : 100 - settings.shareA
+export function TrackPage({ track, tracks, plan, done, skipped, settings, progress, onToggle, onSkip, onProgress, edits, baseItems, onEdits, onDeleteTrack }: TrackPageProps) {
+  // «мимо плана» и ссылка на второй трек есть только у встроенных
+  const builtinId = track.id === 'A' || track.id === 'B' ? track.id : null
+  const otherId = builtinId === 'A' ? 'B' : 'A'
+  const other = builtinId ? TRACKS.find((candidate) => candidate.id === otherId) : undefined
+  const share = shareOf(track.id, settings, tracks)
 
   return (
     <main className="track-page">
@@ -31,7 +42,8 @@ export function TrackPage({ trackId, plan, done, skipped, settings, progress, on
         50 % — кандидат на «отложить». <a href={ROUTE_META.home.hash}>Темп и стартовый трек — на обзоре</a>.
       </p>
       <TrackSection
-        trackPlan={plan.tracks[trackId]}
+        track={track}
+        trackPlan={plan.tracks[track.id]}
         done={done}
         settings={settings}
         skipped={skipped}
@@ -42,19 +54,31 @@ export function TrackPage({ trackId, plan, done, skipped, settings, progress, on
         headingLevel={1}
         afterHeader={
           <>
-            <NowPanel trackPlan={plan.tracks[trackId]} done={done} settings={settings} skipped={skipped} progress={progress} />
-            <Timeline plan={plan} only={trackId} />
+            <NowPanel trackPlan={plan.tracks[track.id]} done={done} settings={settings} skipped={skipped} progress={progress} />
+            <Timeline plan={plan} tracks={tracks} only={track.id} />
           </>
         }
+        edits={edits}
+        baseItems={baseItems}
+        onEdits={onEdits}
       />
-      <LoadChart plan={plan} settings={settings} only={trackId} />
-      <p className="track-page__other">
-        Что из библиотеки не попало в этот трек и стоит ли возвращаться:{' '}
-        <a href={ROUTE_META[skippedRouteOf(trackId)].hash}>мимо плана — трек {trackId}</a>
-      </p>
+      <LoadChart plan={plan} settings={settings} tracks={tracks} only={track.id} />
+      {builtinId && (
+        <p className="track-page__other">
+          Что из библиотеки не попало в этот трек и стоит ли возвращаться:{' '}
+          <a href={ROUTE_META[skippedRouteOf(builtinId)].hash}>мимо плана — трек {builtinId}</a>
+        </p>
+      )}
       {other && (
         <p className="track-page__other">
           Второй трек: <a href={ROUTE_META[otherId].hash}>Трек {otherId} — {other.name}</a>
+        </p>
+      )}
+      {onDeleteTrack && (
+        <p className="track-page__other">
+          <button type="button" className="link-button" onClick={onDeleteTrack}>
+            Удалить трек
+          </button>
         </p>
       )}
     </main>

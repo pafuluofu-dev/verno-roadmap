@@ -1,0 +1,187 @@
+/* Режим редактирования трека: панель над этапами, ряды инструментов у этапа и шага, формы вехи и шага.
+   Вне режима из всего этого рендерится только кнопка-переключатель — остальная страница выглядит как раньше. */
+.plan-editor {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-sm) var(--spacing-md);
+}
+
+.plan-editor__hint {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.plan-editor__swap {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+}
+
+/* Ряд инструментов: у кнопок зона нажатия не меньше 2rem, как у .link-button */
+.edit-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+}
+
+.edit-tools--stage {
+  padding: 0 0.875rem 0.75rem;
+}
+
+.edit-tools--step {
+  grid-column: 2;
+}
+
+.edit-tools__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  min-height: 2rem;
+  padding: 0.25rem 0.5rem;
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border-control);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-family-mono);
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.edit-tools__button:hover {
+  color: var(--color-text);
+  border-color: var(--color-text-muted);
+}
+
+/* Нажатый «⇄»: первый шаг обмена выбран */
+.edit-tools__button--active {
+  color: var(--color-on-accent);
+  background: var(--gradient-primary-strong);
+  border-color: transparent;
+}
+
+/* Недоступная кнопка — цветом, а не прозрачностью, как .button:disabled */
+.edit-tools__button:disabled {
+  color: var(--color-text-muted);
+  background: var(--color-background);
+  border-color: var(--color-border);
+  cursor: not-allowed;
+}
+
+/* Строка списка шагов, в которой вместо шага раскрыта форма */
+.stage__editor {
+  border-block-start: var(--border-width) solid var(--color-border);
+}
+
+.stage__editor:first-child {
+  border-block-start: 0;
+}
+
+.node-editor,
+.folder-editor {
+  display: grid;
+  gap: var(--spacing-sm);
+  padding: 0.75rem 0.875rem;
+}
+
+/* Отдельная форма под списком (новый этап, новый шаг в хвост, новый трек) — карточкой */
+.node-editor--card,
+.folder-editor--card {
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+.node-editor__title,
+.folder-editor__title {
+  font-size: var(--font-size-md);
+  font-weight: 600;
+}
+
+.node-editor__grid,
+.folder-editor__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(10rem, 100%), 1fr));
+  gap: var(--spacing-sm) 0.75rem;
+}
+
+.node-editor__field,
+.folder-editor__field {
+  display: grid;
+  gap: var(--spacing-xs);
+  min-width: 0;
+}
+
+.node-editor__field--wide,
+.folder-editor__field--wide {
+  grid-column: 1 / -1;
+}
+
+.node-editor__label,
+.folder-editor__label {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.node-editor__input,
+.folder-editor__input {
+  width: 100%;
+  min-width: 0;
+  min-height: 2.25rem;
+  padding: var(--spacing-xs) 0.625rem;
+  background: var(--color-surface);
+  border: var(--border-width) solid var(--color-border-input);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+}
+
+.node-editor__textarea,
+.folder-editor__textarea {
+  resize: vertical;
+  min-height: 4.5rem;
+}
+
+.node-editor__toggle {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  min-height: 2.25rem;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+
+.node-editor__checkbox {
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  accent-color: var(--color-text);
+}
+
+.node-editor__actions,
+.folder-editor__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+/* Кнопки добавления: под списком этапов трека и под карточками треков на обзоре */
+.editor-add {
+  display: grid;
+  gap: var(--spacing-sm);
+}
+
+.editor-add--section {
+  margin-block-start: var(--spacing-md);
+}
+
+.editor-add__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}

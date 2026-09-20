@@ -1,24 +1,26 @@
 import { Fragment, useRef, type CSSProperties } from 'react'
 import { useScrollFade } from './useScrollFade'
-import { UNI_DATE, type TrackId } from '../data'
+import { UNI_DATE, type Track } from '../data'
 import { addDays, fmtDate, MONTHS_SHORT, parseISO, toISO, type Plan } from '../schedule'
+import { trackLabel, trackModifier } from '../trackStyle'
 
 interface TimelineProps {
   plan: Plan
+  /** Все треки в порядке показа — встроенные и свои */
+  tracks: Track[]
   /** Показать только один трек (страница трека) */
-  only?: TrackId
+  only?: string
 }
 
 const MIN_SPAN_WEEKS = 8
-const TRACK_IDS: TrackId[] = ['A', 'B']
 
-export function Timeline({ plan, only }: TimelineProps) {
+export function Timeline({ plan, tracks, only }: TimelineProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const fade = useScrollFade(scrollRef)
   const viewportClass = ['timeline__viewport', fade.start ? 'timeline__viewport--fade-start' : '', fade.end ? 'timeline__viewport--fade-end' : '']
     .filter(Boolean)
     .join(' ')
-  const trackIds: TrackId[] = only ? [only] : TRACK_IDS
+  const shown = only ? tracks.filter((track) => track.id === only) : tracks
   const start = plan.start
   const minEnd = addDays(start, MIN_SPAN_WEEKS * 7)
   const end = plan.end > minEnd ? plan.end : minEnd
@@ -36,10 +38,10 @@ export function Timeline({ plan, only }: TimelineProps) {
   const showUniversity = university > start && university <= end
 
   let counter = 0
-  const milestones = trackIds.flatMap((trackId) =>
-    plan.tracks[trackId].items
+  const milestones = shown.flatMap((track) =>
+    plan.tracks[track.id].items
       .filter((step) => step.item.kind === 'milestone' && step.finish)
-      .map((step) => ({ trackId, step, number: ++counter })),
+      .map((step) => ({ trackId: track.id, step, number: ++counter })),
   )
 
   return (
@@ -54,11 +56,11 @@ export function Timeline({ plan, only }: TimelineProps) {
 
       {/* График декоративен для скринридера — то же содержание словами */}
       <p className="visually-hidden">
-        {trackIds
-          .map((trackId) => {
-            const track = plan.tracks[trackId]
-            const percent = track.total ? Math.round((track.done / track.total) * 100) : 0
-            return `Трек ${trackId}: отмечено ${percent} %, финиш ${fmtDate(track.finish)}. `
+        {shown
+          .map((track) => {
+            const trackPlan = plan.tracks[track.id]
+            const percent = trackPlan.total ? Math.round((trackPlan.done / trackPlan.total) * 100) : 0
+            return `${trackLabel(track)}: отмечено ${percent} %, финиш ${fmtDate(trackPlan.finish)}. `
           })
           .join('')}
         Возвращение в вуз 9 февраля 2027.
@@ -66,7 +68,7 @@ export function Timeline({ plan, only }: TimelineProps) {
 
       <div className={viewportClass}>
       <div className="timeline__scroll" ref={scrollRef}>
-        <div className="timeline__chart" style={{ '--timeline-rows': trackIds.length } as CSSProperties} aria-hidden="true">
+        <div className="timeline__chart" style={{ '--timeline-rows': shown.length } as CSSProperties} aria-hidden="true">
           <div className="timeline__months">
             {months.map((month) => (
               <span className="timeline__month" key={`${month.label}-${month.x}`} style={{ insetInlineStart: `${month.x}%` }}>
@@ -80,19 +82,19 @@ export function Timeline({ plan, only }: TimelineProps) {
             )}
           </div>
 
-          {trackIds.map((trackId) => {
-            const track = plan.tracks[trackId]
-            const modifier = trackId === 'A' ? 'track-a' : 'track-b'
-            const percent = track.total ? Math.round((track.done / track.total) * 100) : 0
+          {shown.map((track) => {
+            const trackPlan = plan.tracks[track.id]
+            const modifier = trackModifier(track.id)
+            const percent = trackPlan.total ? Math.round((trackPlan.done / trackPlan.total) * 100) : 0
             return (
-              <Fragment key={trackId}>
-                <span className="timeline__row-label">Трек {trackId}</span>
+              <Fragment key={track.id}>
+                <span className="timeline__row-label">{trackLabel(track)}</span>
                 <div className="timeline__row">
-                  <span className={`timeline__bar timeline__bar--${modifier}`} style={{ width: `${track.finish ? positionOf(track.finish) : 0}%` }}>
+                  <span className={`timeline__bar timeline__bar--${modifier}`} style={{ width: `${trackPlan.finish ? positionOf(trackPlan.finish) : 0}%` }}>
                     <span className={`timeline__fill timeline__fill--${modifier}`} style={{ width: `${percent}%` }} />
                   </span>
                   {milestones
-                    .filter((milestone) => milestone.trackId === trackId)
+                    .filter((milestone) => milestone.trackId === track.id)
                     .map((milestone) => (
                       <span className="timeline__milestone" key={milestone.step.item.id} style={{ insetInlineStart: `${positionOf(milestone.step.finish as Date)}%` }}>
                         <span className="timeline__milestone-marker" />
@@ -110,7 +112,7 @@ export function Timeline({ plan, only }: TimelineProps) {
       <ol className="milestone-legend">
         {milestones.map((milestone) => (
           <li className="milestone-legend__item" key={milestone.step.item.id}>
-            <span className={`milestone-legend__number milestone-legend__number--${milestone.trackId === 'A' ? 'track-a' : 'track-b'}`}>{milestone.number}</span>
+            <span className={`milestone-legend__number milestone-legend__number--${trackModifier(milestone.trackId)}`}>{milestone.number}</span>
             <span>{milestone.step.item.title}</span>
             <time className="milestone-legend__date" dateTime={toISO(milestone.step.finish as Date)}>{fmtDate(milestone.step.finish)}</time>
           </li>

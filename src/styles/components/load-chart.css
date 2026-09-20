@@ -59,6 +59,10 @@
   background: var(--color-track-b);
 }
 
+.load-chart__seg--c {
+  background: var(--color-track-c);
+}
+
 .load-chart__months {
   display: flex;
   gap: 3px;
@@ -93,7 +97,8 @@
 }
 
 .load-chart__key--a::before,
-.load-chart__key--b::before {
+.load-chart__key--b::before,
+.load-chart__key--c::before {
   content: '';
   display: inline-block;
   width: 0.625rem;
@@ -108,6 +113,10 @@
 
 .load-chart__key--b::before {
   background: var(--color-track-b);
+}
+
+.load-chart__key--c::before {
+  background: var(--color-track-c);
 }
 
 .progress-ring {

@@ -1,8 +1,11 @@
 import type { CSSProperties } from 'react'
+import type { Track } from '../data'
 import { DEFAULT_SETTINGS, type Settings } from '../schedule'
 
 interface ScheduleControlsProps {
   settings: Settings
+  /** Все треки: со своими остаток недели уходит не B, а всем остальным */
+  tracks: Track[]
   onChange: (settings: Settings) => void
   onResetProgress: () => void
 }
@@ -13,9 +16,10 @@ function toBoundedNumber(value: string, min: number, max: number, fallback: numb
   return Math.min(max, Math.max(min, parsed))
 }
 
-export function ScheduleControls({ settings, onChange, onResetProgress }: ScheduleControlsProps) {
+export function ScheduleControls({ settings, tracks, onChange, onResetProgress }: ScheduleControlsProps) {
   const update = (patch: Partial<Settings>) => onChange({ ...settings, ...patch })
   const shareB = 100 - settings.shareA
+  const custom = tracks.length > 2
 
   return (
     <section className="schedule-controls" aria-labelledby="controls-title">
@@ -25,7 +29,8 @@ export function ScheduleControls({ settings, onChange, onResetProgress }: Schedu
         <div className="schedule-controls__share-header">
           <label className="schedule-controls__legend" htmlFor="share-range">Деление недели между треками</label>
           <output className="schedule-controls__output" htmlFor="share-range">
-            <span className="schedule-controls__output-a">A {settings.shareA} %</span> · <span className="schedule-controls__output-b">B {shareB} %</span>
+            <span className="schedule-controls__output-a">A {settings.shareA} %</span> ·{' '}
+            <span className="schedule-controls__output-b">{custom ? 'остальным' : 'B'} {shareB} %</span>
           </output>
         </div>
         <input
@@ -99,7 +104,8 @@ export function ScheduleControls({ settings, onChange, onResetProgress }: Schedu
       </fieldset>
 
       <p className="schedule-controls__hint">
-        Когда один трек закончен, вся неделя уходит второму. Заказ важнее курса: если заказы съедают время, просто уменьши часы в неделю — даты сдвинутся честно.
+        {custom ? 'Когда один трек закончен, его часы делятся между остальными.' : 'Когда один трек закончен, вся неделя уходит второму.'} Заказ важнее курса: если
+        заказы съедают время, просто уменьши часы в неделю — даты сдвинутся честно.
       </p>
     </section>
   )

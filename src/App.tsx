@@ -1,24 +1,33 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react'
-import { ITEMS, TRACKS } from './data'
+import { ITEMS, TRACKS, type Track } from './data'
 import { buildPlan, unitsOf, type DoneMap, type ProgressMap, type Settings, type SkippedMap } from './schedule'
+import { effectiveItems, EMPTY_EDITS, hasEdits, type PlanEdits } from './planEdits'
+import { isBuiltinTrack } from './trackStyle'
 import {
+  CUSTOM_TRACK_COLOR,
   loadCustomReminders,
+  loadCustomTracks,
   loadDismissedReminders,
   loadDone,
   loadNotes,
+  loadPlanEdits,
   loadProgress,
   loadSettings,
   loadSkipped,
   saveCustomReminders,
+  saveCustomTracks,
   saveDismissedReminders,
   saveDone,
   saveNotes,
+  savePlanEdits,
   saveProgress,
   saveSettings,
   loadTheme,
   saveSkipped,
   saveTheme,
+  sanitizeCustomTracks,
   sanitizeNotes,
+  sanitizePlanEditsMap,
   sanitizeSettings,
   type CustomReminder,
   type Theme,
@@ -35,11 +44,19 @@ import { TrackPage } from './components/TrackPage'
 import { OverallProgress } from './components/OverallProgress'
 import { SkippedPage } from './components/SkippedPage'
 import { BackupSection } from './components/BackupSection'
+import { FolderForm } from './components/PlanEditor'
 import { buildReminderViews, countDueReminders, ReminderBanner, RemindersSection } from './components/Reminders'
-import { ROUTE_META, useRoute } from './router'
+import { ROUTE_META, routeMeta, trackHash, trackIdOf, useRoute, type Route } from './router'
 
 // KaTeX весит ~260 КБ — тянем его только на страницу заметок, чтобы галочки на треках открывались мгновенно
 const NotebookPage = lazy(() => import('./components/NotebookPage').then((module) => ({ default: module.NotebookPage })))
+
+const TRACK_LABELS = { heading: 'Свой трек', title: 'Название', note: 'Цель' }
+
+/** Копия словаря без указанных ключей — так стираются галочки и счётчики шагов удалённого трека */
+function withoutKeys<T>(map: Record<string, T>, keys: Set<string>): Record<string, T> {
+  return Object.fromEntries(Object.entries(map).filter(([id]) => !keys.has(id)))
+}
 
 export default function App() {
   const [done, setDone] = useState<DoneMap>(loadDone)
@@ -49,6 +66,10 @@ export default function App() {
   const [dismissedReminders, setDismissedReminders] = useState<Record<string, boolean>>(loadDismissedReminders)
   const [customReminders, setCustomReminders] = useState<CustomReminder[]>(loadCustomReminders)
   const [notes, setNotes] = useState<UserNote[]>(loadNotes)
+  const [customTracks, setCustomTracks] = useState<Track[]>(loadCustomTracks)
+  // правки читаются после списка треков: записи неизвестных треков отбрасываются
+  const [planEdits, setPlanEdits] = useState<Record<string, PlanEdits>>(() => loadPlanEdits([...TRACKS, ...customTracks].map((track) => track.id)))
+  const [trackForm, setTrackForm] = useState(false)
   const [pendingReminderScroll, setPendingReminderScroll] = useState(false)
   const [theme, setTheme] = useState<Theme>(loadTheme)
   const route = useRoute()
@@ -62,6 +83,8 @@ export default function App() {
   useEffect(() => saveDismissedReminders(dismissedReminders), [dismissedReminders])
   useEffect(() => saveCustomReminders(customReminders), [customReminders])
   useEffect(() => saveNotes(notes), [notes])
+  useEffect(() => saveCustomTracks(customTracks), [customTracks])
+  useEffect(() => savePlanEdits(planEdits), [planEdits])
 
   useEffect(() => {
     if (theme === 'light') document.documentElement.setAttribute('data-theme', 'light')
@@ -70,24 +93,37 @@ export default function App() {
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'light' ? '#f6f8f3' : '#0d0d0d')
   }, [theme])
 
+  const allTracks = useMemo(() => [...TRACKS, ...customTracks], [customTracks])
+  // итоговые шаги: данные кода с наложенными правками владельца
+  const items = useMemo(() => effectiveItems(planEdits, allTracks), [planEdits, allTracks])
+
+  const routeTrackId = trackIdOf(route)
+  const routeTrack = routeTrackId === null ? undefined : allTracks.find((track) => track.id === routeTrackId)
+  // Неизвестный трек — удалён или ссылка с другого устройства — ведёт на обзор
+  const page: Route = routeTrackId !== null && !routeTrack ? 'home' : route
+
   useEffect(() => {
-    document.title = ROUTE_META[route].title
+    document.title = routeMeta(page, allTracks).title
+  }, [page, allTracks])
+
+  useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false
       return
     }
     window.scrollTo({ top: 0 })
     pageRef.current?.focus({ preventScroll: true })
-  }, [route])
+  }, [page])
 
   useEffect(() => {
-    if (pendingReminderScroll && route === 'home') {
+    if (pendingReminderScroll && page === 'home') {
       document.getElementById('reminders-title')?.scrollIntoView({ block: 'start' })
       setPendingReminderScroll(false)
     }
-  }, [pendingReminderScroll, route])
+  }, [pendingReminderScroll, page])
 
-  const plan = useMemo(() => buildPlan(settings, done, skipped, progress), [settings, done, skipped, progress])
+  const plan = useMemo(() => buildPlan(settings, done, skipped, progress, items, allTracks), [settings, done, skipped, progress, items, allTracks])
+  const baseItems = useMemo(() => (routeTrack ? ITEMS.filter((item) => item.track === routeTrack.id) : []), [routeTrack])
 
   const toggleStep = (id: string) =>
     setDone((previous) => {
@@ -106,7 +142,7 @@ export default function App() {
     })
 
   const setStepProgress = (id: string, value: number) => {
-    const item = ITEMS.find((candidate) => candidate.id === id)
+    const item = items.find((candidate) => candidate.id === id)
     if (!item) return
     const next = Math.min(unitsOf(item), Math.max(0, Math.round(Number(value) || 0)))
     // ноль записываем явно: без записи шаг откатится к заготовке из data.ts
@@ -144,7 +180,7 @@ export default function App() {
   }
 
   const openReminders = () => {
-    if (route !== 'home') window.location.hash = ROUTE_META.home.hash
+    if (page !== 'home') window.location.hash = ROUTE_META.home.hash
     setPendingReminderScroll(true)
   }
 
@@ -153,7 +189,33 @@ export default function App() {
 
   const deleteNote = (id: string) => setNotes((previous) => previous.filter((entry) => entry.id !== id))
 
-  const exportData = () => JSON.stringify({ v: 1, done, skipped, progress, settings, customReminders, dismissedReminders, notes })
+  const setTrackEdits = (trackId: string, edits: PlanEdits) =>
+    setPlanEdits((previous) => {
+      const next = { ...previous }
+      if (hasEdits(edits)) next[trackId] = edits
+      else delete next[trackId]
+      return next
+    })
+
+  const createTrack = (name: string, goal: string) => {
+    const id = `t-${Date.now().toString(36)}`
+    setCustomTracks((previous) => [...previous, { id, name, goal, color: CUSTOM_TRACK_COLOR }])
+    setTrackForm(false)
+    window.location.hash = trackHash(id)
+  }
+
+  const deleteTrack = (track: Track) => {
+    if (!window.confirm(`Удалить трек «${track.name}»? Его шаги, правки и галочки будут стёрты.`)) return
+    const own = new Set(items.filter((item) => item.track === track.id).map((item) => item.id))
+    setDone((previous) => withoutKeys(previous, own))
+    setSkipped((previous) => withoutKeys(previous, own))
+    setProgressMap((previous) => withoutKeys(previous, own))
+    setPlanEdits((previous) => withoutKeys(previous, new Set([track.id])))
+    setCustomTracks((previous) => previous.filter((candidate) => candidate.id !== track.id))
+    window.location.hash = ROUTE_META.home.hash
+  }
+
+  const exportData = () => JSON.stringify({ v: 1, done, skipped, progress, settings, customReminders, dismissedReminders, notes, customTracks, planEdits })
 
   const importData = (raw: string): boolean => {
     try {
@@ -183,6 +245,10 @@ export default function App() {
       if (parsed.dismissedReminders && typeof parsed.dismissedReminders === 'object')
         setDismissedReminders(parsed.dismissedReminders as Record<string, boolean>)
       if (Array.isArray(parsed.notes)) setNotes(sanitizeNotes(parsed.notes))
+      // копия без своих треков и правок читается как «их нет» — они заменяются целиком, как и галочки
+      const tracks = sanitizeCustomTracks(parsed.customTracks)
+      setCustomTracks(tracks)
+      setPlanEdits(sanitizePlanEditsMap(parsed.planEdits, [...TRACKS, ...tracks].map((track) => track.id)))
       return true
     } catch {
       return false
@@ -192,8 +258,9 @@ export default function App() {
   return (
     <div className="container">
       <AppNav
-        route={route}
+        route={page}
         plan={plan}
+        tracks={allTracks}
         dueReminders={countDueReminders(reminders, dismissedReminders)}
         onBellClick={openReminders}
         theme={theme}
@@ -201,25 +268,43 @@ export default function App() {
       />
       <ReminderBanner reminders={reminders} dismissed={dismissedReminders} onDismiss={toggleReminderDismiss} />
       <div className="page" ref={pageRef} tabIndex={-1}>
-        {route === 'home' ? (
+        {page === 'home' ? (
           <>
-            <Hero plan={plan} />
+            <Hero plan={plan} tracks={allTracks} />
             <main>
-              <Recommendation plan={plan} settings={settings} done={done} skipped={skipped} onChange={setSettings} />
+              <Recommendation plan={plan} settings={settings} done={done} skipped={skipped} items={items} tracks={allTracks} onChange={setSettings} />
               <section className="page-section" aria-labelledby="tracks-title">
                 <div className="page-section__header">
                   <h2 id="tracks-title">Треки</h2>
                   <p className="section-lead">Полные списки шагов с галочками — на страницах треков.</p>
                 </div>
                 <div className="track-cards">
-                  {TRACKS.map((track) => (
-                    <TrackCard key={track.id} trackPlan={plan.tracks[track.id]} done={done} skipped={skipped} settings={settings} />
+                  {allTracks.map((track) => (
+                    <TrackCard key={track.id} track={track} tracks={allTracks} trackPlan={plan.tracks[track.id]} done={done} skipped={skipped} settings={settings} />
                   ))}
                 </div>
+                <div className="editor-add editor-add--section">
+                  {trackForm ? (
+                    <FolderForm
+                      idPrefix="new-track"
+                      labels={TRACK_LABELS}
+                      submitLabel="Создать трек"
+                      card
+                      onSave={(fields) => createTrack(fields.title, fields.note)}
+                      onCancel={() => setTrackForm(false)}
+                    />
+                  ) : (
+                    <div className="editor-add__actions">
+                      <button type="button" className="button" onClick={() => setTrackForm(true)}>
+                        + Свой трек
+                      </button>
+                    </div>
+                  )}
+                </div>
               </section>
-              <ScheduleControls settings={settings} onChange={setSettings} onResetProgress={resetProgress} />
-              <Timeline plan={plan} />
-              <LoadChart plan={plan} settings={settings} />
+              <ScheduleControls settings={settings} tracks={allTracks} onChange={setSettings} onResetProgress={resetProgress} />
+              <Timeline plan={plan} tracks={allTracks} />
+              <LoadChart plan={plan} settings={settings} tracks={allTracks} />
               <RemindersSection
                 reminders={reminders}
                 dismissed={dismissedReminders}
@@ -239,15 +324,17 @@ export default function App() {
               </section>
             </main>
           </>
-        ) : route === 'notebook' ? (
+        ) : page === 'notebook' ? (
           <Suspense fallback={<p className="page-loading">Загружаю заметки…</p>}>
             <NotebookPage notes={notes} onSave={saveNote} onDelete={deleteNote} />
           </Suspense>
-        ) : route === 'skippedA' || route === 'skippedB' ? (
-          <SkippedPage trackId={route === 'skippedA' ? 'A' : 'B'} />
-        ) : (
+        ) : page === 'skippedA' || page === 'skippedB' ? (
+          <SkippedPage trackId={page === 'skippedA' ? 'A' : 'B'} />
+        ) : routeTrack ? (
           <TrackPage
-            trackId={route}
+            key={routeTrack.id}
+            track={routeTrack}
+            tracks={allTracks}
             plan={plan}
             done={done}
             skipped={skipped}
@@ -256,10 +343,14 @@ export default function App() {
             onToggle={toggleStep}
             onSkip={toggleSkip}
             onProgress={setStepProgress}
+            edits={planEdits[routeTrack.id] ?? EMPTY_EDITS}
+            baseItems={baseItems}
+            onEdits={(edits) => setTrackEdits(routeTrack.id, edits)}
+            onDeleteTrack={isBuiltinTrack(routeTrack.id) ? undefined : () => deleteTrack(routeTrack)}
           />
-        )}
+        ) : null}
       </div>
-      {route !== 'home' && <OverallProgress plan={plan} />}
+      {page !== 'home' && <OverallProgress plan={plan} />}
       <footer className="site-footer">
         <p>
           Часы работы = видео × коэффициент: курсы с кодом ×2, no-code и дизайн ×1,5, справочные ×1,2. Длительности — из библиотеки Udemy на 2 сентября 2026 и оценок Stepik на 13 сентября (там часы — оценка платформы вместе с задачами, без коэффициента),

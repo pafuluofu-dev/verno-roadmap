@@ -1,23 +1,25 @@
-import { TRACKS } from '../data'
-import { fmtDate, fmtDateYear, fmtHours, isDone, isScheduled, type DoneMap, type Settings, type SkippedMap, type TrackPlan } from '../schedule'
-import { ROUTE_META } from '../router'
+import type { Track } from '../data'
+import { fmtDate, fmtDateYear, fmtHours, isDone, isScheduled, shareOf, type DoneMap, type Settings, type SkippedMap, type TrackPlan } from '../schedule'
+import { trackHash } from '../router'
+import { isBuiltinTrack, trackColor, trackLetter } from '../trackStyle'
 import { ProgressRing } from './ProgressRing'
 
 interface TrackCardProps {
+  track: Track
+  /** Все треки — для доли недели */
+  tracks: Track[]
   trackPlan: TrackPlan
   done: DoneMap
   skipped: SkippedMap
   settings: Settings
 }
 
-export function TrackCard({ trackPlan, done, skipped, settings }: TrackCardProps) {
-  const track = TRACKS.find((candidate) => candidate.id === trackPlan.track)
-  if (!track) return null
-
-  const modifier = track.id === 'A' ? 'track-card--a' : 'track-card--b'
+export function TrackCard({ track, tracks, trackPlan, done, skipped, settings }: TrackCardProps) {
+  const builtin = isBuiltinTrack(track.id)
+  const modifier = builtin ? `track-card--${trackLetter(track.id)}` : 'track-card--custom'
   const percent = trackPlan.total ? Math.round((trackPlan.done / trackPlan.total) * 100) : 0
-  const share = track.id === 'A' ? settings.shareA : 100 - settings.shareA
-  const hash = ROUTE_META[track.id].hash
+  const share = shareOf(track.id, settings, tracks)
+  const hash = trackHash(track.id)
   const next = trackPlan.items.find(
     (step) => step.item.kind !== 'milestone' && !isDone(step.item, done) && isScheduled(step.item, settings, skipped),
   )
@@ -26,7 +28,7 @@ export function TrackCard({ trackPlan, done, skipped, settings }: TrackCardProps
     <article className={`track-card ${modifier}`}>
       <div className="track-card__head">
         <div className="track-card__heading">
-          <p className="eyebrow">Трек {track.id} · {share} % недели</p>
+          <p className="eyebrow">{builtin ? `Трек ${track.id}` : 'Свой трек'} · {share} % недели</p>
           <h3 className="track-card__title">
             <a href={hash}>{track.name}</a>
           </h3>
@@ -34,8 +36,8 @@ export function TrackCard({ trackPlan, done, skipped, settings }: TrackCardProps
         </div>
         <ProgressRing
           percent={percent}
-          color={track.id === 'A' ? 'var(--color-track-a)' : 'var(--color-track-b)'}
-          label={`Прогресс трека ${track.id}: ${percent} %`}
+          color={trackColor(track.id)}
+          label={`Прогресс трека ${builtin ? track.id : `«${track.name}»`}: ${percent} %`}
         />
       </div>
       <p className="track-card__meta">
@@ -56,7 +58,7 @@ export function TrackCard({ trackPlan, done, skipped, settings }: TrackCardProps
         </p>
       )}
       <a className="button track-card__cta" href={hash}>
-        Открыть трек {track.id}
+        {builtin ? `Открыть трек ${track.id}` : 'Открыть трек'}
       </a>
     </article>
   )

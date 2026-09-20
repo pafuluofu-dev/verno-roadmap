@@ -1,4 +1,4 @@
-import { SKIPPED, TRACKS, type Skipped, type TrackId } from '../data'
+import { SKIPPED, TRACKS, type BuiltinTrackId, type Skipped } from '../data'
 import { ROUTE_META } from '../router'
 
 type Action = Skipped['action']
@@ -65,13 +65,13 @@ function SkippedItem({ entry }: { entry: Skipped }) {
   )
 }
 
-export function SkippedPage({ trackId }: { trackId: TrackId }) {
+export function SkippedPage({ trackId }: { trackId: BuiltinTrackId }) {
   const track = TRACKS.find((candidate) => candidate.id === trackId)
   if (!track) return null
 
   const entries = SKIPPED.filter((entry) => entry.track === trackId)
   const modifier = trackId === 'A' ? 'skipped--a' : 'skipped--b'
-  const otherId: TrackId = trackId === 'A' ? 'B' : 'A'
+  const otherId: BuiltinTrackId = trackId === 'A' ? 'B' : 'A'
   const otherRoute = otherId === 'A' ? 'skippedA' : 'skippedB'
 
   return (

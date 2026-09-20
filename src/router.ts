@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react'
-import type { TrackId } from './data'
+import type { BuiltinTrackId, Track } from './data'
 
-/** Страницы «мимо плана» — по одной на трек */
+/** Страницы «мимо плана» — по одной на встроенный трек */
 export type SkippedRoute = 'skippedA' | 'skippedB'
-export type Route = 'home' | TrackId | SkippedRoute | 'notebook'
+export type StaticRoute = 'home' | BuiltinTrackId | SkippedRoute | 'notebook'
+/** Страница своего трека: track:<id> */
+export type TrackRoute = `track:${string}`
+export type Route = StaticRoute | TrackRoute
 
-export const ROUTE_META: Record<Route, { hash: string; title: string }> = {
+export const ROUTE_META: Record<StaticRoute, { hash: string; title: string }> = {
   home: { hash: '#/', title: 'Маршрут verno/dev' },
   A: { hash: '#/track-a', title: 'Трек A — фриланс · Маршрут verno/dev' },
   B: { hash: '#/track-b', title: 'Трек B — fullstack · Маршрут verno/dev' },
@@ -14,12 +17,38 @@ export const ROUTE_META: Record<Route, { hash: string; title: string }> = {
   notebook: { hash: '#/notebook', title: 'Заметки — Маршрут verno/dev' },
 }
 
-export const skippedRouteOf = (track: TrackId): SkippedRoute => (track === 'A' ? 'skippedA' : 'skippedB')
+export const skippedRouteOf = (track: BuiltinTrackId): SkippedRoute => (track === 'A' ? 'skippedA' : 'skippedB')
+
+const TRACK_HASH_PREFIX = '#/track/'
+const TRACK_ROUTE_PREFIX = 'track:'
+
+const isBuiltin = (id: string): id is BuiltinTrackId => id === 'A' || id === 'B'
+const isStaticRoute = (route: Route): route is StaticRoute => route in ROUTE_META
+
+/** Адрес страницы трека: встроенные — как раньше, свои — #/track/<id> */
+export const trackHash = (id: string): string => (isBuiltin(id) ? ROUTE_META[id].hash : `${TRACK_HASH_PREFIX}${id}`)
+
+export const trackRouteOf = (id: string): Route => (isBuiltin(id) ? id : `${TRACK_ROUTE_PREFIX}${id}`)
+
+/** id трека, если маршрут — страница трека, иначе null */
+export function trackIdOf(route: Route): string | null {
+  if (isBuiltin(route)) return route
+  return route.startsWith(TRACK_ROUTE_PREFIX) ? route.slice(TRACK_ROUTE_PREFIX.length) : null
+}
+
+/** Адрес и заголовок вкладки; неизвестный свой трек (удалён или ссылка с другого устройства) ведёт на обзор */
+export function routeMeta(route: Route, tracks: Track[]): { hash: string; title: string } {
+  if (isStaticRoute(route)) return ROUTE_META[route]
+  const id = route.slice(TRACK_ROUTE_PREFIX.length)
+  const track = tracks.find((candidate) => candidate.id === id)
+  return track ? { hash: trackHash(id), title: `${track.name} · Маршрут verno/dev` } : ROUTE_META.home
+}
 
 function parseHash(hash: string): Route {
   if (hash.startsWith(ROUTE_META.notebook.hash)) return 'notebook'
   if (hash.startsWith(ROUTE_META.skippedA.hash)) return 'skippedA'
   if (hash.startsWith(ROUTE_META.skippedB.hash)) return 'skippedB'
+  if (hash.startsWith(TRACK_HASH_PREFIX)) return `${TRACK_ROUTE_PREFIX}${hash.slice(TRACK_HASH_PREFIX.length)}`
   if (hash.startsWith(ROUTE_META.A.hash)) return 'A'
   if (hash.startsWith(ROUTE_META.B.hash)) return 'B'
   return 'home'

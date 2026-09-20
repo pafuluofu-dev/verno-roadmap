@@ -18,6 +18,10 @@
   border-inline-start-color: var(--color-track-b);
 }
 
+.track--c .now {
+  border-inline-start-color: var(--color-track-c);
+}
+
 .now__title {
   font-size: var(--font-size-xl);
   line-height: 1.25;
@@ -53,6 +57,10 @@
 
 .track--b .now__link {
   color: var(--color-track-b-text);
+}
+
+.track--c .now__link {
+  color: var(--color-track-c-text);
 }
 
 .now__rule {

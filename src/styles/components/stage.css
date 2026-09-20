@@ -70,6 +70,10 @@
   color: var(--color-track-b-text);
 }
 
+.track--c .stage__goal-date {
+  color: var(--color-track-c-text);
+}
+
 .stage__steps {
   list-style: none;
   border-block-start: var(--border-width) solid var(--color-border);

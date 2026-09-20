@@ -28,6 +28,10 @@
   accent-color: var(--color-track-b);
 }
 
+.track--c .step__checkbox {
+  accent-color: var(--color-track-c);
+}
+
 .step__title {
   font-weight: 600;
   font-size: var(--font-size-md);
@@ -120,6 +124,10 @@
   color: var(--color-track-b-text);
 }
 
+.track--c .step__source-link {
+  color: var(--color-track-c-text);
+}
+
 .step__source-link:hover {
   color: var(--color-text);
 }
@@ -172,6 +180,10 @@
 
 .track--b .step__progress-bar .progress-bar__fill {
   background: var(--color-track-b);
+}
+
+.track--c .step__progress-bar .progress-bar__fill {
+  background: var(--color-track-c);
 }
 
 .step__progress-row {

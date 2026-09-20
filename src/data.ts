@@ -1,4 +1,8 @@
-export type TrackId = 'A' | 'B'
+/** Встроенные треки: только на них ссылаются привычки и «мимо плана» */
+export type BuiltinTrackId = 'A' | 'B'
+
+/** Любой трек — встроенный или свой (id вида t-…, живёт в localStorage) */
+export type TrackId = string
 
 export type ItemKind = 'course' | 'free' | 'practice' | 'milestone'
 
@@ -34,7 +38,7 @@ export interface Item {
 }
 
 export interface Habit {
-  track: TrackId
+  track: BuiltinTrackId
   time: string
   text: string
 }
@@ -904,7 +908,7 @@ export interface Reminder {
 export const REMINDERS: Reminder[] = remindersJson as Reminder[]
 
 export interface Skipped {
-  track: TrackId
+  track: BuiltinTrackId
   title: string
   meta: string
   /** Почему пропущен */

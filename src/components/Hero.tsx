@@ -1,19 +1,27 @@
+import type { Track } from '../data'
 import { fmtDateYear, fmtHours, type Plan } from '../schedule'
+import { isBuiltinTrack } from '../trackStyle'
 import { AnimatedNumber } from './AnimatedNumber'
 
 interface HeroProps {
   plan: Plan
+  tracks: Track[]
 }
 
-export function Hero({ plan }: HeroProps) {
-  const total = plan.tracks.A.total + plan.tracks.B.total
-  const done = plan.tracks.A.done + plan.tracks.B.done
+export function Hero({ plan, tracks }: HeroProps) {
+  const plans = tracks.map((track) => plan.tracks[track.id])
+  const total = plans.reduce((sum, trackPlan) => sum + trackPlan.total, 0)
+  const done = plans.reduce((sum, trackPlan) => sum + trackPlan.done, 0)
   const percent = total ? Math.round((done / total) * 100) : 0
 
   const stats = [
-    { value: plan.tracks.A.remaining, format: fmtHours, unit: 'ч', label: `осталось в треке A · финиш ${fmtDateYear(plan.tracks.A.finish)}` },
-    { value: plan.tracks.B.remaining, format: fmtHours, unit: 'ч', label: `осталось в треке B · финиш ${fmtDateYear(plan.tracks.B.finish)}` },
-    { value: plan.weeks, format: undefined, unit: 'нед', label: 'до закрытия обоих треков при текущих настройках' },
+    ...tracks.map((track, index) => ({
+      value: plans[index].remaining,
+      format: fmtHours,
+      unit: 'ч',
+      label: `осталось в треке ${isBuiltinTrack(track.id) ? track.id : track.name} · финиш ${fmtDateYear(plans[index].finish)}`,
+    })),
+    { value: plan.weeks, format: undefined, unit: 'нед', label: `до закрытия ${tracks.length > 2 ? 'всех' : 'обоих'} треков при текущих настройках` },
     { value: percent, format: undefined, unit: '%', label: `отмечено · ${fmtHours(done)} из ${fmtHours(total)} ч` },
   ]
 

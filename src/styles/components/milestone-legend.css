@@ -31,6 +31,10 @@
   background: var(--color-track-b);
 }
 
+.milestone-legend__number--track-c {
+  background: var(--color-track-c);
+}
+
 .milestone-legend__date {
   font-family: var(--font-family-mono);
   font-variant-numeric: tabular-nums;

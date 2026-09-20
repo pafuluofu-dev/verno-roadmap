@@ -16,6 +16,11 @@
   --color-track-b: #f2f2f2;
   --color-track-b-text: #f2f2f2;
   --color-track-b-surface: #2a2a2a;
+  /* Свои треки владельца — общий третий цвет, голубой; чёрный текст на нём ≈ 11 */
+  --color-track-c: #6cc6ff;
+  --color-track-c-text: #8fd3ff;
+  --color-track-c-surface: #12303f;
+  --color-surface-c: #181818;
   --color-success: #8be24a;
   --color-warn: #f5a524;
   --color-focus: #8be24a;
@@ -75,6 +80,10 @@
   --color-track-b: #4a4a46;
   --color-track-b-text: #33352f;
   --color-track-b-surface: #e9e9e4;
+  --color-track-c: #1f6fb2;
+  --color-track-c-text: #1a5f99;
+  --color-track-c-surface: #e2eef8;
+  --color-surface-c: #e9f0f6;
   --color-success: #2f6b0a;
   --color-warn: #8f6000;
   --color-focus: #2f6b0a;

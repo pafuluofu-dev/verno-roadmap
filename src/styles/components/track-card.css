@@ -19,6 +19,11 @@
   border-block-start-color: var(--color-track-b);
 }
 
+.track-card--custom {
+  background: var(--color-surface-c);
+  border-block-start-color: var(--color-track-c);
+}
+
 .track-card {
   transition: transform var(--transition-fast), border-color var(--transition-fast);
 }

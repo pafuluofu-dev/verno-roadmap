@@ -21,3 +21,7 @@
 .progress-bar__fill--track-b {
   background: var(--color-track-b);
 }
+
+.progress-bar__fill--track-c {
+  background: var(--color-track-c);
+}

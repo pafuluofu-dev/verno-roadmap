@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react'
-import { HABITS, TRACKS, type Item, type TrackId } from '../data'
+import { useState, type ReactNode } from 'react'
+import { HABITS, type Item, type Track } from '../data'
 import {
   fmtDate,
   fmtDateYear,
@@ -17,11 +17,34 @@ import {
   type SkippedMap,
   type TrackPlan,
 } from '../schedule'
+import {
+  addFolder,
+  addNode,
+  deleteFolder,
+  deleteNode,
+  diffFolderFields,
+  diffNodeFields,
+  hasEdits,
+  moveFolder,
+  moveNode,
+  moveNodeToFolder,
+  resetEdits,
+  swapNodes,
+  TAIL_ID,
+  updateFolder,
+  updateNode,
+  type FolderFields,
+  type NodeFields,
+  type PlanEdits,
+} from '../planEdits'
+import { isBuiltinTrack, trackColor, trackLetter, trackModifier } from '../trackStyle'
 import { AnimatedNumber } from './AnimatedNumber'
 import { PauseIcon } from './icons'
+import { FolderForm, MILESTONE_LABELS, NEW_STAGE_LABELS, NodeForm, PlanEditorPanel, plural, StageTools, StepTools, type FolderOption } from './PlanEditor'
 import { ProgressRing } from './ProgressRing'
 
 interface TrackSectionProps {
+  track: Track
   trackPlan: TrackPlan
   done: DoneMap
   settings: Settings
@@ -34,13 +57,46 @@ interface TrackSectionProps {
   headingLevel?: 1 | 2
   /** Контент между шапкой трека и списком шагов (календарь на странице трека) */
   afterHeader?: ReactNode
+  /** Редактор этапов и шагов: правки трека, его исходные шаги и куда сохранять */
+  edits: PlanEdits
+  baseItems: Item[]
+  onEdits: (edits: PlanEdits) => void
+}
+
+/** Раскрытая форма редактора: правка шага или вехи, новый шаг в этап, новый этап */
+type EditorForm = { kind: 'node'; id: string } | { kind: 'new-node'; folderId: string } | { kind: 'folder'; id: string } | { kind: 'new-folder' }
+
+/** Состояние и колбэки редактора, которые нужны карточке этапа; есть только в режиме редактирования */
+interface StageEditor {
+  form: EditorForm | null
+  swapFirst: string | null
+  folders: FolderOption[]
+  onMoveFolder: (id: string, delta: number) => void
+  onDeleteFolder: (id: string) => void
+  onEditFolder: (id: string) => void
+  onSaveFolder: (id: string, fields: FolderFields) => void
+  onAddNode: (folderId: string) => void
+  onMoveNode: (id: string, delta: number) => void
+  onSwapNode: (id: string) => void
+  onEditNode: (id: string) => void
+  onDeleteNode: (id: string) => void
+  /** id null — новый шаг в конец folderId */
+  onSaveNode: (id: string | null, folderId: string, fields: NodeFields) => void
+  onCancel: () => void
 }
 
 function formatNumber(value: number): string {
   return String(value).replace('.', ',')
 }
 
+/** Поля формы из шага; веха сюда не попадает — у неё своя форма */
+function nodeFieldsOf(item: Item): NodeFields {
+  const { kind, title, meta, note, hours, video, factor, optional, url, units, unitWord, value } = item
+  return { kind: kind === 'milestone' ? 'course' : kind, title, meta, note, hours, video, factor, optional, url, units, unitWord, value }
+}
+
 export function TrackSection({
+  track,
   trackPlan,
   done,
   settings,
@@ -51,23 +107,101 @@ export function TrackSection({
   onProgress,
   headingLevel = 2,
   afterHeader,
+  edits,
+  baseItems,
+  onEdits,
 }: TrackSectionProps) {
-  const track = TRACKS.find((candidate) => candidate.id === trackPlan.track)
-  if (!track) return null
+  // Пустой свой трек открывается сразу в режиме редактирования — иначе на странице нечего делать
+  const [editing, setEditing] = useState(() => trackPlan.items.length === 0)
+  const [form, setForm] = useState<EditorForm | null>(null)
+  const [swapFirst, setSwapFirst] = useState<string | null>(null)
 
   const Heading: 'h1' | 'h2' = headingLevel === 1 ? 'h1' : 'h2'
-  const modifier = track.id === 'A' ? 'track--a' : 'track--b'
+  const builtin = isBuiltinTrack(track.id)
+  const modifier = `track--${trackLetter(track.id)}`
   const percent = trackPlan.total ? Math.round((trackPlan.done / trackPlan.total) * 100) : 0
   const habits = HABITS.filter((habit) => habit.track === track.id)
   const titleId = `track-${track.id.toLowerCase()}-title`
   const skippedSteps = trackPlan.items.filter((step) => step.item.kind !== 'milestone' && skipped[step.item.id] && !isDone(step.item, done))
   const skippedHours = skippedSteps.reduce((sum, step) => sum + step.item.hours, 0)
 
+  const stages = buildStages(trackPlan.items)
+  const folderIdOf = (stage: Stage) => stage.goal?.item.id ?? TAIL_ID
+  const hasTailStage = stages.some((stage) => !stage.goal)
+  const milestoneCount = stages.filter((stage) => stage.goal).length
+  // этапы для селекта в форме шага; хвост предлагается всегда — шаг можно вынести за последнюю веху
+  const folderOptions: FolderOption[] = stages.map((stage) => ({ id: folderIdOf(stage), label: `Этап ${stage.n} · ${stage.goal ? stage.goal.item.title : 'без вехи'}` }))
+  if (!hasTailStage) folderOptions.push({ id: TAIL_ID, label: `Этап ${stages.length + 1} · без вехи` })
+
+  const commit = (next: PlanEdits) => {
+    onEdits(next)
+    setForm(null)
+  }
+  const toggleEditing = () => {
+    setEditing((previous) => !previous)
+    setForm(null)
+    setSwapFirst(null)
+  }
+  const reset = () => {
+    const question = builtin
+      ? 'Вернуть исходный трек? Все правки шагов и этапов будут стёрты, галочки останутся.'
+      : 'Очистить трек? Все его шаги и этапы будут удалены, галочки останутся.'
+    if (window.confirm(question)) commit(resetEdits())
+  }
+  const itemOf = (id: string) => trackPlan.items.find((step) => step.item.id === id)?.item
+
+  const editor: StageEditor = {
+    form,
+    swapFirst,
+    folders: folderOptions,
+    onMoveFolder: (id, delta) => commit(moveFolder(edits, baseItems, id, delta)),
+    onDeleteFolder: (id) => {
+      const stage = stages.find((candidate) => folderIdOf(candidate) === id)
+      if (!stage?.goal) return
+      const count = stage.steps.length
+      const outcome = count === 0 ? 'Шагов в этапе нет.' : `${count} ${plural(count, ['шаг перейдёт', 'шага перейдут', 'шагов перейдут'])} в следующий этап.`
+      if (window.confirm(`Удалить веху «${stage.goal.item.title}»? ${outcome}`)) commit(deleteFolder(edits, baseItems, id))
+    },
+    onEditFolder: (id) => setForm({ kind: 'folder', id }),
+    onSaveFolder: (id, fields) => {
+      const current = itemOf(id)
+      commit(updateFolder(edits, id, current && !edits.addedFolders[id] ? diffFolderFields(current, fields) : fields))
+    },
+    onAddNode: (folderId) => setForm({ kind: 'new-node', folderId }),
+    onMoveNode: (id, delta) => commit(moveNode(edits, baseItems, id, delta)),
+    onSwapNode: (id) => {
+      if (swapFirst === null) {
+        setSwapFirst(id)
+        return
+      }
+      if (swapFirst !== id) commit(swapNodes(edits, baseItems, swapFirst, id))
+      setSwapFirst(null)
+    },
+    onEditNode: (id) => setForm({ kind: 'node', id }),
+    onDeleteNode: (id) => {
+      const current = itemOf(id)
+      if (current && window.confirm(`Удалить шаг «${current.title}»?`)) commit(deleteNode(edits, baseItems, id))
+    },
+    onSaveNode: (id, folderId, fields) => {
+      if (id === null) {
+        commit(addNode(edits, baseItems, folderId, fields))
+        return
+      }
+      const current = itemOf(id)
+      let next = updateNode(edits, id, current && !edits.addedNodes[id] ? diffNodeFields(current, fields) : fields)
+      // смена этапа в форме — перенос в конец выбранного
+      const home = stages.find((stage) => stage.steps.some((step) => step.item.id === id))
+      if (home && folderIdOf(home) !== folderId) next = moveNodeToFolder(next, baseItems, id, folderId)
+      commit(next)
+    },
+    onCancel: () => setForm(null),
+  }
+
   return (
     <section className={`track ${modifier}`} aria-labelledby={titleId}>
       <header className="track__header">
         <div className="track__header-main">
-          <p className="eyebrow">Трек {track.id}</p>
+          <p className="eyebrow">{builtin ? `Трек ${track.id}` : 'Свой трек'}</p>
           <Heading id={titleId} className="track__title">{track.name}</Heading>
           <p className="track__goal">{track.goal}</p>
           <p className="track__meta">
@@ -84,42 +218,96 @@ export function TrackSection({
         </div>
         <ProgressRing
           percent={percent}
-          color={track.id === 'A' ? 'var(--color-track-a)' : 'var(--color-track-b)'}
-          label={`Прогресс трека ${track.id}: ${percent} %`}
+          color={trackColor(track.id)}
+          label={`Прогресс трека ${builtin ? track.id : `«${track.name}»`}: ${percent} %`}
           size={72}
         />
       </header>
 
       {afterHeader}
 
+      <PlanEditorPanel
+        editing={editing}
+        canReset={hasEdits(edits)}
+        resetLabel={builtin ? 'Вернуть исходный трек' : 'Очистить трек'}
+        swapping={swapFirst !== null}
+        onToggle={toggleEditing}
+        onReset={reset}
+        onCancelSwap={() => setSwapFirst(null)}
+      />
+
       <div className="stages">
-        {buildStages(trackPlan.items).map((stage) => (
-          <StageCard
-            key={stage.n}
-            stage={stage}
-            trackId={track.id}
-            done={done}
-            settings={settings}
-            skipped={skipped}
-            progress={progress}
-            onToggle={onToggle}
-            onSkip={onSkip}
-            onProgress={onProgress}
-          />
-        ))}
+        {stages.map((stage, index) => {
+          const folderId = folderIdOf(stage)
+          return (
+            <StageCard
+              key={folderId}
+              stage={stage}
+              folderId={folderId}
+              trackId={track.id}
+              canMoveUp={index > 0}
+              canMoveDown={index < milestoneCount - 1}
+              done={done}
+              settings={settings}
+              skipped={skipped}
+              progress={progress}
+              onToggle={onToggle}
+              onSkip={onSkip}
+              onProgress={onProgress}
+              editor={editing ? editor : undefined}
+            />
+          )
+        })}
       </div>
 
-      <div className="habits">
-        <p className="eyebrow">Привычки трека — не в часах, а каждый день</p>
-        <ul className="habit-list">
-          {habits.map((habit) => (
-            <li className="habit-list__item" key={habit.text}>
-              <span className="habit-list__time">{habit.time}</span>
-              <span>{habit.text}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
+      {editing && (
+        <div className="editor-add">
+          {form?.kind === 'new-folder' && (
+            <FolderForm
+              idPrefix="new-stage"
+              labels={NEW_STAGE_LABELS}
+              submitLabel="Добавить этап"
+              card
+              onSave={(fields) => commit(addFolder(edits, baseItems, fields))}
+              onCancel={editor.onCancel}
+            />
+          )}
+          {form?.kind === 'new-node' && form.folderId === TAIL_ID && !hasTailStage && (
+            <NodeForm
+              idPrefix="new-tail-step"
+              folders={folderOptions}
+              folderId={TAIL_ID}
+              card
+              onSave={(fields, folderId) => editor.onSaveNode(null, folderId, fields)}
+              onCancel={editor.onCancel}
+            />
+          )}
+          <div className="editor-add__actions">
+            <button type="button" className="button" onClick={() => setForm({ kind: 'new-folder' })}>
+              + Добавить этап
+            </button>
+            {!hasTailStage && (
+              <button type="button" className="button" onClick={() => setForm({ kind: 'new-node', folderId: TAIL_ID })}>
+                + Добавить шаг
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {habits.length > 0 && (
+        <div className="habits">
+          <p className="eyebrow">Привычки трека — не в часах, а каждый день</p>
+          <ul className="habit-list">
+            {habits.map((habit) => (
+              <li className="habit-list__item" key={habit.text}>
+                <span className="habit-list__time">{habit.time}</span>
+                <span>{habit.text}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </section>
   )
 }
@@ -148,7 +336,11 @@ function buildStages(items: ItemPlan[]): Stage[] {
 
 interface StageCardProps {
   stage: Stage
-  trackId: TrackId
+  /** id вехи этапа; у хвоста без вехи — 'tail' */
+  folderId: string
+  trackId: string
+  canMoveUp: boolean
+  canMoveDown: boolean
   done: DoneMap
   settings: Settings
   skipped: SkippedMap
@@ -156,9 +348,10 @@ interface StageCardProps {
   onToggle: (id: string) => void
   onSkip: (id: string) => void
   onProgress: (id: string, value: number) => void
+  editor?: StageEditor
 }
 
-function StageCard({ stage, trackId, done, settings, skipped, progress, onToggle, onSkip, onProgress }: StageCardProps) {
+function StageCard({ stage, folderId, trackId, canMoveUp, canMoveDown, done, settings, skipped, progress, onToggle, onSkip, onProgress, editor }: StageCardProps) {
   // В знаменателе только шаги «в игре»: отложенные из счёта уходят, как и из расписания
   const counted = stage.steps.filter((step) => isDone(step.item, done) || isScheduled(step.item, settings, skipped))
   const doneSteps = counted.filter((step) => isDone(step.item, done))
@@ -170,6 +363,7 @@ function StageCard({ stage, trackId, done, settings, skipped, progress, onToggle
   // Шаги «по желанию» и отложенные остаются в списке, но не в счёте — иначе цифры не сходятся с видимыми строками
   const parked = stage.steps.length - counted.length
   const goalDone = stage.goal ? isDone(stage.goal.item, done) || allDone : false
+  const form = editor?.form ?? null
 
   return (
     <details className="stage" open={!allDone}>
@@ -185,6 +379,28 @@ function StageCard({ stage, trackId, done, settings, skipped, progress, onToggle
         </span>
       </summary>
 
+      {editor && (
+        <StageTools
+          tail={!stage.goal}
+          canMoveUp={canMoveUp}
+          canMoveDown={canMoveDown}
+          onEdit={() => editor.onEditFolder(folderId)}
+          onMoveUp={() => editor.onMoveFolder(folderId, -1)}
+          onMoveDown={() => editor.onMoveFolder(folderId, 1)}
+          onAddNode={() => editor.onAddNode(folderId)}
+          onDelete={() => editor.onDeleteFolder(folderId)}
+        />
+      )}
+      {editor && stage.goal && form?.kind === 'folder' && form.id === folderId && (
+        <FolderForm
+          idPrefix={`stage-${folderId}`}
+          initial={{ title: stage.goal.item.title, note: stage.goal.item.note }}
+          labels={MILESTONE_LABELS}
+          onSave={(fields) => editor.onSaveFolder(folderId, fields)}
+          onCancel={editor.onCancel}
+        />
+      )}
+
       <span
         className="progress-bar stage__bar"
         role="progressbar"
@@ -193,7 +409,7 @@ function StageCard({ stage, trackId, done, settings, skipped, progress, onToggle
         aria-valuemax={100}
         aria-valuenow={percent}
       >
-        <span className={`progress-bar__fill progress-bar__fill--${trackId === 'A' ? 'track-a' : 'track-b'}`} style={{ width: `${percent}%` }} />
+        <span className={`progress-bar__fill progress-bar__fill--${trackModifier(trackId)}`} style={{ width: `${percent}%` }} />
       </span>
 
       {stage.goal && (
@@ -212,19 +428,57 @@ function StageCard({ stage, trackId, done, settings, skipped, progress, onToggle
       )}
 
       <ol className="stage__steps">
-        {stage.steps.map((step) => (
-          <StepItem
-            key={step.item.id}
-            step={step}
-            checked={isDone(step.item, done)}
-            scheduled={isScheduled(step.item, settings, skipped)}
-            isSkipped={!!skipped[step.item.id]}
-            unitsCompleted={unitsDone(step.item, progress)}
-            onToggle={onToggle}
-            onSkip={onSkip}
-            onProgress={onProgress}
-          />
-        ))}
+        {stage.steps.map((step, index) =>
+          editor && form?.kind === 'node' && form.id === step.item.id ? (
+            <li className="stage__editor" key={step.item.id}>
+              <NodeForm
+                idPrefix={`step-${step.item.id}`}
+                initial={nodeFieldsOf(step.item)}
+                folders={editor.folders}
+                folderId={folderId}
+                onSave={(fields, target) => editor.onSaveNode(step.item.id, target, fields)}
+                onCancel={editor.onCancel}
+              />
+            </li>
+          ) : (
+            <StepItem
+              key={step.item.id}
+              step={step}
+              checked={isDone(step.item, done)}
+              scheduled={isScheduled(step.item, settings, skipped)}
+              isSkipped={!!skipped[step.item.id]}
+              unitsCompleted={unitsDone(step.item, progress)}
+              onToggle={onToggle}
+              onSkip={onSkip}
+              onProgress={onProgress}
+              tools={
+                editor && (
+                  <StepTools
+                    canMoveUp={index > 0}
+                    canMoveDown={index < stage.steps.length - 1}
+                    swapping={editor.swapFirst === step.item.id}
+                    onMoveUp={() => editor.onMoveNode(step.item.id, -1)}
+                    onMoveDown={() => editor.onMoveNode(step.item.id, 1)}
+                    onSwap={() => editor.onSwapNode(step.item.id)}
+                    onEdit={() => editor.onEditNode(step.item.id)}
+                    onDelete={() => editor.onDeleteNode(step.item.id)}
+                  />
+                )
+              }
+            />
+          ),
+        )}
+        {editor && form?.kind === 'new-node' && form.folderId === folderId && (
+          <li className="stage__editor">
+            <NodeForm
+              idPrefix={`new-${folderId}`}
+              folders={editor.folders}
+              folderId={folderId}
+              onSave={(fields, target) => editor.onSaveNode(null, target, fields)}
+              onCancel={editor.onCancel}
+            />
+          </li>
+        )}
       </ol>
     </details>
   )
@@ -239,6 +493,8 @@ interface StepItemProps {
   onToggle: (id: string) => void
   onSkip: (id: string) => void
   onProgress: (id: string, value: number) => void
+  /** Ряд инструментов редактора — только в режиме редактирования */
+  tools?: ReactNode
 }
 
 /** Подпись ссылки по домену: пользователь должен понимать, куда уйдёт, ещё до клика */
@@ -334,7 +590,7 @@ function StepProgress({ item, value, onProgress }: { item: Item; value: number; 
   )
 }
 
-function StepItem({ step, checked, scheduled, isSkipped, unitsCompleted, onToggle, onSkip, onProgress }: StepItemProps) {
+function StepItem({ step, checked, scheduled, isSkipped, unitsCompleted, onToggle, onSkip, onProgress, tools }: StepItemProps) {
   const item: Item = step.item
   const locked = Boolean(item.done)
 
@@ -357,6 +613,7 @@ function StepItem({ step, checked, scheduled, isSkipped, unitsCompleted, onToggl
             вернуть в план
           </button>
         </p>
+        {tools}
       </li>
     )
   }
@@ -405,6 +662,7 @@ function StepItem({ step, checked, scheduled, isSkipped, unitsCompleted, onToggl
           </button>
         )}
       </p>
+      {tools}
     </li>
   )
 }
