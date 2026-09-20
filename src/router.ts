@@ -3,7 +3,7 @@ import type { BuiltinTrackId, Track } from './data'
 
 /** Страницы «мимо плана» — по одной на встроенный трек */
 export type SkippedRoute = 'skippedA' | 'skippedB'
-export type StaticRoute = 'home' | BuiltinTrackId | SkippedRoute | 'notebook'
+export type StaticRoute = 'home' | BuiltinTrackId | SkippedRoute | 'notebook' | 'tree'
 /** Страница своего трека: track:<id> */
 export type TrackRoute = `track:${string}`
 export type Route = StaticRoute | TrackRoute
@@ -15,6 +15,7 @@ export const ROUTE_META: Record<StaticRoute, { hash: string; title: string }> = 
   skippedA: { hash: '#/skipped-a', title: 'Мимо плана — фриланс · Маршрут verno/dev' },
   skippedB: { hash: '#/skipped-b', title: 'Мимо плана — fullstack · Маршрут verno/dev' },
   notebook: { hash: '#/notebook', title: 'Заметки — Маршрут verno/dev' },
+  tree: { hash: '#/tree', title: 'Дерево — Маршрут verno/dev' },
 }
 
 export const skippedRouteOf = (track: BuiltinTrackId): SkippedRoute => (track === 'A' ? 'skippedA' : 'skippedB')
@@ -46,6 +47,7 @@ export function routeMeta(route: Route, tracks: Track[]): { hash: string; title:
 
 function parseHash(hash: string): Route {
   if (hash.startsWith(ROUTE_META.notebook.hash)) return 'notebook'
+  if (hash.startsWith(ROUTE_META.tree.hash)) return 'tree'
   if (hash.startsWith(ROUTE_META.skippedA.hash)) return 'skippedA'
   if (hash.startsWith(ROUTE_META.skippedB.hash)) return 'skippedB'
   if (hash.startsWith(TRACK_HASH_PREFIX)) return `${TRACK_ROUTE_PREFIX}${hash.slice(TRACK_HASH_PREFIX.length)}`

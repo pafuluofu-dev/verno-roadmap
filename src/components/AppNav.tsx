@@ -33,6 +33,7 @@ export function AppNav({ route, plan, tracks, dueReminders, onBellClick, theme, 
       .filter((track) => !isBuiltinTrack(track.id))
       .map((track) => ({ route: trackRouteOf(track.id), hash: trackHash(track.id), label: shortName(track.name), percent: percentOf(track.id) })),
     { route: 'notebook', hash: ROUTE_META.notebook.hash, label: 'Заметки' },
+    { route: 'tree', hash: ROUTE_META.tree.hash, label: 'Дерево' },
   ]
 
   const listRef = useRef<HTMLUListElement>(null)

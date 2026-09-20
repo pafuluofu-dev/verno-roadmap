@@ -50,6 +50,8 @@ import { ROUTE_META, routeMeta, trackHash, trackIdOf, useRoute, type Route } fro
 
 // KaTeX весит ~260 КБ — тянем его только на страницу заметок, чтобы галочки на треках открывались мгновенно
 const NotebookPage = lazy(() => import('./components/NotebookPage').then((module) => ({ default: module.NotebookPage })))
+// Дерево нужно на одной странице из шести, и генератор SVG нужен только там — отдельным куском
+const TreePage = lazy(() => import('./components/TreePage').then((module) => ({ default: module.TreePage })))
 
 const TRACK_LABELS = { heading: 'Свой трек', title: 'Название', note: 'Цель' }
 
@@ -327,6 +329,10 @@ export default function App() {
         ) : page === 'notebook' ? (
           <Suspense fallback={<p className="page-loading">Загружаю заметки…</p>}>
             <NotebookPage notes={notes} onSave={saveNote} onDelete={deleteNote} />
+          </Suspense>
+        ) : page === 'tree' ? (
+          <Suspense fallback={<p className="page-loading">Строю дерево…</p>}>
+            <TreePage plan={plan} tracks={allTracks} done={done} skipped={skipped} settings={settings} />
           </Suspense>
         ) : page === 'skippedA' || page === 'skippedB' ? (
           <SkippedPage trackId={page === 'skippedA' ? 'A' : 'B'} />

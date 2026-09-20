@@ -37,6 +37,7 @@ import {
   type NodeFields,
   type PlanEdits,
 } from '../planEdits'
+import { buildStages, type Stage } from '../tree'
 import { isBuiltinTrack, trackColor, trackLetter, trackModifier } from '../trackStyle'
 import { AnimatedNumber } from './AnimatedNumber'
 import { PauseIcon } from './icons'
@@ -310,28 +311,6 @@ export function TrackSection({
       )}
     </section>
   )
-}
-
-/** Этап — отрезок трека до ближайшей вехи; веха закрывает этап и служит его целью */
-interface Stage {
-  n: number
-  goal: ItemPlan | null
-  steps: ItemPlan[]
-}
-
-function buildStages(items: ItemPlan[]): Stage[] {
-  const stages: Stage[] = []
-  let current: ItemPlan[] = []
-  for (const step of items) {
-    if (step.item.kind === 'milestone') {
-      stages.push({ n: stages.length + 1, goal: step, steps: current })
-      current = []
-    } else {
-      current.push(step)
-    }
-  }
-  if (current.length > 0) stages.push({ n: stages.length + 1, goal: null, steps: current })
-  return stages
 }
 
 interface StageCardProps {

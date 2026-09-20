@@ -1,0 +1,170 @@
+/* Дерево плана: треки → этапы → шаги одной картой.
+   Соединители рисует CSS — вертикаль на списке, горизонталь на элементе; у последнего элемента
+   хвост вертикали закрывается полосой фона, иначе линия свисает под последним маркером. */
+.tree-page {
+  display: grid;
+  gap: var(--spacing-lg);
+}
+
+.tree-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.tree-tools__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  min-height: 2rem;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.tree-tools__message {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.tree {
+  list-style: none;
+  overflow-x: auto;
+}
+
+.tree__list {
+  position: relative;
+  padding-inline-start: 1.25rem;
+  margin-inline-start: 0.5rem;
+  border-inline-start: var(--border-width) solid var(--color-border);
+  list-style: none;
+}
+
+.tree__item {
+  position: relative;
+}
+
+.tree__list > .tree__item::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: -1.25rem;
+  inset-block-start: 0.85rem;
+  width: 1rem;
+  border-block-start: var(--border-width) solid var(--color-border);
+}
+
+.tree__list > .tree__item:last-child::after {
+  content: '';
+  position: absolute;
+  inset-inline-start: calc(-1.25rem - 1px);
+  inset-block-start: 0.85rem;
+  inset-block-end: 0;
+  width: 2px;
+  background: var(--color-background);
+}
+
+.tree__folder {
+  min-width: 0;
+}
+
+.tree__summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.tree__summary::-webkit-details-marker {
+  display: none;
+}
+
+/* Подсветка по цвету своей ветки, а не всегда зелёным треком A */
+.tree__row--branch-a:hover .tree__label {
+  color: var(--color-track-a-text);
+}
+
+.tree__row--branch-b:hover .tree__label {
+  color: var(--color-track-b-text);
+}
+
+.tree__row--branch-c:hover .tree__label {
+  color: var(--color-track-c-text);
+}
+
+/* Строка узла: маркер, название, серая подпись. На телефоне подпись уезжает под название */
+.tree__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--spacing-xs) var(--spacing-sm);
+  min-height: 2rem;
+  padding-block: var(--spacing-xs);
+  font-size: var(--font-size-md);
+  line-height: 1.35;
+}
+
+.tree__marker {
+  flex: none;
+  width: 1rem;
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+/* Базис 0, а не auto: иначе длинное название целиком уезжает на строку под маркером вместо переноса внутри себя */
+.tree__label {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* На телефоне подпись уходит на свою строку под названием — иначе она отжимает название до двух слов в строке */
+.tree__meta {
+  flex: 1 0 100%;
+  padding-inline-start: 1.5rem;
+  font-family: var(--font-family-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+@media (min-width: 40rem) {
+  .tree__row {
+    flex-wrap: nowrap;
+  }
+
+  .tree__label {
+    flex: 1 1 auto;
+  }
+
+  .tree__meta {
+    flex: none;
+    padding-inline-start: 0;
+  }
+}
+
+.tree__row--branch-a .tree__marker {
+  color: var(--color-track-a);
+}
+
+.tree__row--branch-b .tree__marker {
+  color: var(--color-track-b);
+}
+
+.tree__row--branch-c .tree__marker {
+  color: var(--color-track-c);
+}
+
+.tree__row--done .tree__marker {
+  color: var(--color-success);
+}
+
+.tree__row--done .tree__label {
+  color: var(--color-text-muted);
+  text-decoration: line-through;
+}
+
+.tree__row--current .tree__label {
+  font-weight: 600;
+}
+
+.tree__row--muted .tree__label {
+  color: var(--color-text-muted);
+}
