@@ -1,4 +1,5 @@
 import clientBrief from './notebook/client-brief.md?raw'
+import clientBriefEn from './notebook/client-brief-en.md?raw'
 
 /** Своя заметка владельца: Markdown-подмножество плюс формулы $…$ и $$…$$ */
 export interface UserNote {
@@ -19,6 +20,13 @@ export const SEED_NOTES: UserNote[] = [
     id: 'seed-client-brief',
     title: 'Бриф на разработку сайта: опросный лист для клиента',
     body: clientBrief,
+    createdAt: '2026-09-22',
+    updatedAt: '2026-09-22',
+  },
+  {
+    id: 'seed-client-brief-en',
+    title: 'Website Design Brief: опросный лист для иностранного клиента',
+    body: clientBriefEn,
     createdAt: '2026-09-22',
     updatedAt: '2026-09-22',
   },
