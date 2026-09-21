@@ -1,6 +1,6 @@
 import { DEFAULT_SETTINGS, type DoneMap, type ProgressMap, type Settings, type SkippedMap } from './schedule'
 import type { Track } from './data'
-import type { UserNote } from './data/notebook'
+import { SEED_NOTES, type UserNote } from './data/notebook'
 import { hasEdits, NODE_KINDS, NODE_NUMBER_KEYS, NODE_TEXT_KEYS, type FolderFields, type NodeFields, type PlanEdits, type PlanLayout } from './planEdits'
 import { isBuiltinTrack } from './trackStyle'
 
@@ -13,6 +13,7 @@ const PROGRESS_KEY = 'verno-roadmap:progress'
 const REMINDERS_DISMISSED_KEY = 'verno-roadmap:reminders-dismissed'
 const REMINDERS_CUSTOM_KEY = 'verno-roadmap:reminders-custom'
 const NOTES_KEY = 'verno-roadmap:notes'
+const NOTE_SEEDS_KEY = 'verno-roadmap:note-seeds'
 const PLAN_EDITS_KEY = 'verno-roadmap:plan-edits'
 const TRACKS_KEY = 'verno-roadmap:tracks'
 const THEME_KEY = 'verno-roadmap:theme'
@@ -162,14 +163,41 @@ export function sanitizeNotes(raw: unknown): UserNote[] {
     }))
 }
 
-/** Свои заметки владельца — страница «Заметки» */
-export function loadNotes(): UserNote[] {
+/* id уже показанных стартовых заметок. Без этого списка новая заметка не дошла бы до тетради,
+   в которой уже что-то есть, а с ним — не воскресает удалённая: показали один раз и записали id. */
+function loadSeenSeeds(): string[] {
   try {
-    const raw = localStorage.getItem(NOTES_KEY)
-    if (!raw) return []
-    return sanitizeNotes(JSON.parse(raw))
+    const raw = localStorage.getItem(NOTE_SEEDS_KEY)
+    const parsed = raw ? JSON.parse(raw) : null
+    return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === 'string') : []
   } catch {
     return []
+  }
+}
+
+/** Свои заметки владельца — страница «Заметки». Непоказанные стартовые встают в начало списка.
+    Функция обязана быть чистой: это инициализатор useState, а StrictMode зовёт его дважды —
+    запись «показано» вынесена в markSeedNotesSeen, иначе второй вызов терял свежую заметку. */
+export function loadNotes(): UserNote[] {
+  let stored: UserNote[] = []
+  try {
+    const raw = localStorage.getItem(NOTES_KEY)
+    if (raw) stored = sanitizeNotes(JSON.parse(raw))
+  } catch {
+    /* см. выше */
+  }
+  const seen = loadSeenSeeds()
+  return [...SEED_NOTES.filter((seed) => !seen.includes(seed.id)), ...stored]
+}
+
+/** Отметить стартовые заметки показанными — эффектом после монтирования. Идемпотентна */
+export function markSeedNotesSeen(): void {
+  try {
+    const seen = loadSeenSeeds()
+    const fresh = SEED_NOTES.map((seed) => seed.id).filter((id) => !seen.includes(id))
+    if (fresh.length > 0) localStorage.setItem(NOTE_SEEDS_KEY, JSON.stringify([...seen, ...fresh]))
+  } catch {
+    /* см. выше */
   }
 }
 

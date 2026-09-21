@@ -1,3 +1,5 @@
+import clientBrief from './notebook/client-brief.md?raw'
+
 /** Своя заметка владельца: Markdown-подмножество плюс формулы $…$ и $$…$$ */
 export interface UserNote {
   id: string
@@ -9,8 +11,18 @@ export interface UserNote {
   updatedAt: string
 }
 
-/* Стартовых заметок нет — тетрадь начинается пустой */
-export const SEED_NOTES: UserNote[] = []
+/* Стартовые заметки выдаются по одному разу — по списку показанных в storage.ts,
+   поэтому новая доезжает и до заведённой тетради. Дальше это обычная заметка:
+   её можно править и удалять, назад она не вернётся. */
+export const SEED_NOTES: UserNote[] = [
+  {
+    id: 'seed-client-brief',
+    title: 'Бриф на разработку сайта: опросный лист для клиента',
+    body: clientBrief,
+    createdAt: '2026-09-22',
+    updatedAt: '2026-09-22',
+  },
+]
 
 export function makeNoteId(): string {
   return `note-${Date.now().toString(36)}`

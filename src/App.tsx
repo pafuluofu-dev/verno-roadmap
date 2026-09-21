@@ -10,6 +10,7 @@ import {
   loadDismissedReminders,
   loadDone,
   loadNotes,
+  markSeedNotesSeen,
   loadPlanEdits,
   loadProgress,
   loadSettings,
@@ -85,6 +86,9 @@ export default function App() {
   useEffect(() => saveDismissedReminders(dismissedReminders), [dismissedReminders])
   useEffect(() => saveCustomReminders(customReminders), [customReminders])
   useEffect(() => saveNotes(notes), [notes])
+  // стартовые заметки выдаются один раз: список показанных пишется после того,
+  // как loadNotes их уже вернул, — сами заметки сохранит эффект строкой выше
+  useEffect(() => markSeedNotesSeen(), [])
   useEffect(() => saveCustomTracks(customTracks), [customTracks])
   useEffect(() => savePlanEdits(planEdits), [planEdits])
 
