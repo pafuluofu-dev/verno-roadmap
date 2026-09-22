@@ -152,6 +152,17 @@ export function buildPlan(
   const others = Math.max(1, ids.length - 1)
   const weightOf = (t: string) => (t === 'A' ? share : (1 - share) / others)
 
+  // Шаги, закрытые к текущей неделе: по ним разрешаются зависимости notBefore.
+  const finished = new Set<string>()
+  const blocked = (p: ItemPlan): boolean => {
+    const id = p.item.notBefore
+    if (!id || finished.has(id)) return false
+    const blocker = items.find((candidate) => candidate.id === id)
+    // Нет такого шага, он уже отмечен или вовсе не попал в расписание — ждать нечего.
+    if (!blocker || isDone(blocker, done) || !isScheduled(blocker, settings, skipped)) return false
+    return true
+  }
+
   const queues: Record<string, ItemPlan[]> = {}
   const cursor: Record<string, number> = {}
   const lastFinish: Record<string, Date | null> = {}
@@ -174,6 +185,23 @@ export function buildPlan(
 
   const remainingOf = (t: string) => queues[t].slice(cursor[t]).reduce((s, p) => s + p.remaining, 0)
 
+  const settle = (t: string) => {
+    const q = queues[t]
+    while (cursor[t] < q.length) {
+      const p = q[cursor[t]]
+      if (p.remaining > 0) break
+      // отмеченный шаг или веха: закрывается датой предыдущего
+      if (p.item.kind === 'milestone' && !isDone(p.item, done)) p.finish = lastFinish[t]
+      finished.add(p.item.id)
+      cursor[t]++
+    }
+  }
+  /** Трек ждёт чужой шаг: часы недели ему не нужны, их заберут остальные */
+  const waiting = (t: string) => {
+    const p = queues[t][cursor[t]]
+    return p ? blocked(p) : false
+  }
+
   const load: WeekLoad[] = []
   let week = 0
   const MAX_WEEKS = 260
@@ -181,15 +209,19 @@ export function buildPlan(
     const weekStart = addDays(start, week * 7)
     const capacity = weekStart < uni ? settings.hoursBefore : settings.hoursAfter
     if (capacity <= 0) break
+    for (const t of ids) settle(t)
 
     // номинал недели: A по ползунку, остаток поровну между остальными треками
     const hoursA = capacity * share
     const nominal: Record<string, number> = {}
     for (const t of ids) nominal[t] = t === 'A' ? hoursA : (capacity - hoursA) / others
-    const active = ids.filter((t) => remainingOf(t) > 0)
+    const active = ids.filter((t) => remainingOf(t) > 0 && !waiting(t))
     const budgets: Record<string, number> = {}
     for (const t of ids) budgets[t] = 0
-    if (active.length === 1) {
+    if (active.length === 0) {
+      // все оставшиеся треки ждут чужих шагов — такого быть не должно, но цикл крутить незачем
+      break
+    } else if (active.length === 1) {
       // единственный незакрытый трек забирает всю неделю
       budgets[active[0]] = capacity
     } else {
@@ -206,9 +238,12 @@ export function buildPlan(
       const q = queues[t]
       while (budget > 0 && cursor[t] < q.length) {
         const p = q[cursor[t]]
+        // Зависимость ещё не закрыта: трек ждёт, неделя остаётся неизрасходованной
+        if (blocked(p)) break
         if (p.remaining <= 0) {
           // отмеченный шаг или веха: закрывается датой предыдущего
           if (p.item.kind === 'milestone' && !isDone(p.item, done)) p.finish = lastFinish[t]
+          finished.add(p.item.id)
           cursor[t]++
           continue
         }
@@ -222,12 +257,15 @@ export function buildPlan(
           p.finish = addDays(weekStart, Math.min(6, Math.round(frac * 6)))
           lastFinish[t] = p.finish
           p.remaining = 0
+          finished.add(p.item.id)
           cursor[t]++
         }
       }
       consumed[t] = trackCapacity - budget
     }
     if (ids.some((t) => consumed[t] > 0.001)) load.push({ start: weekStart, hours: { ...consumed } })
+    // Никто не сдвинулся: все оставшиеся треки заблокированы друг другом — дальше крутить бессмысленно
+    else break
     week++
   }
 
