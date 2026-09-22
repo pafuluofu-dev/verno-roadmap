@@ -1,5 +1,10 @@
 import clientBrief from './notebook/client-brief.md?raw'
 import clientBriefEn from './notebook/client-brief-en.md?raw'
+import tzDoc from './notebook/sales-tz.md?raw'
+import contractDoc from './notebook/sales-contract.md?raw'
+import outreachDoc from './notebook/outreach.md?raw'
+import cvDoc from './notebook/cv-two.md?raw'
+import queriesDoc from './notebook/job-search.md?raw'
 
 /** Своя заметка владельца: Markdown-подмножество плюс формулы $…$ и $$…$$ */
 export interface UserNote {
@@ -27,6 +32,41 @@ export const SEED_NOTES: UserNote[] = [
     id: 'seed-client-brief-en',
     title: 'Website Design Brief: опросный лист для иностранного клиента',
     body: clientBriefEn,
+    createdAt: '2026-09-22',
+    updatedAt: '2026-09-22',
+  },
+  {
+    id: 'seed-sales-tz',
+    title: 'Техническое задание: шаблон под договор',
+    body: tzDoc,
+    createdAt: '2026-09-22',
+    updatedAt: '2026-09-22',
+  },
+  {
+    id: 'seed-sales-contract',
+    title: 'Договор оказания услуг: черновик под проверку юристом',
+    body: contractDoc,
+    createdAt: '2026-09-22',
+    updatedAt: '2026-09-22',
+  },
+  {
+    id: 'seed-outreach',
+    title: 'Письмо студиям на субподряд и список адресатов',
+    body: outreachDoc,
+    createdAt: '2026-09-22',
+    updatedAt: '2026-09-22',
+  },
+  {
+    id: 'seed-cv-two',
+    title: 'Два резюме: верстальщик и контент-менеджер сайта',
+    body: cvDoc,
+    createdAt: '2026-09-22',
+    updatedAt: '2026-09-22',
+  },
+  {
+    id: 'seed-job-search',
+    title: 'Поиск вакансий: запросы, площадки, ритм откликов, воронка',
+    body: queriesDoc,
     createdAt: '2026-09-22',
     updatedAt: '2026-09-22',
   },
