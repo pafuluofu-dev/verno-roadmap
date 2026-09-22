@@ -4,3 +4,6 @@ dist
 *.log
 # Собирается при сборке из данных плана (npm run plan)
 public/plan.md
+
+# аварийные дампы Git Bash
+*.stackdump
