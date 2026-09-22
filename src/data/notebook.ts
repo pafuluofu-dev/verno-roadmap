@@ -1,5 +1,6 @@
 import clientBrief from './notebook/client-brief.md?raw'
 import clientBriefEn from './notebook/client-brief-en.md?raw'
+import pokerLesson from './notebook/poker-socketio-lesson.md?raw'
 import tzDoc from './notebook/sales-tz.md?raw'
 import contractDoc from './notebook/sales-contract.md?raw'
 import outreachDoc from './notebook/outreach.md?raw'
@@ -62,6 +63,13 @@ export const SEED_NOTES: UserNote[] = [
     body: cvDoc,
     createdAt: '2026-09-22',
     updatedAt: '2026-09-22',
+  },
+  {
+    id: 'seed-poker-lesson',
+    title: 'Покер на Socket.IO: разбор чужого кода к шагу b-socketio',
+    body: pokerLesson,
+    createdAt: '2026-09-23',
+    updatedAt: '2026-09-23',
   },
   {
     id: 'seed-job-search',
