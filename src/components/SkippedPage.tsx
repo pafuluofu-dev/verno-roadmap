@@ -1,5 +1,5 @@
 import { SKIPPED, TRACKS, type BuiltinTrackId, type Skipped } from '../data'
-import { ROUTE_META } from '../router'
+import { ROUTE_META, skippedRouteOf } from '../router'
 
 type Action = Skipped['action']
 
@@ -11,6 +11,13 @@ const GROUPS: { action: Action; title: string; lead: string; open: boolean }[] =
 ]
 
 const ACTION_LABEL: Record<Action, string> = { later: 'позже', 'on-demand': 'под заказ', never: 'никогда' }
+
+/** К чему приближает курс — по треку; подставляется во вводный абзац */
+const GOAL_LABEL: Record<BuiltinTrackId, string> = {
+  A: 'заказам по стеку verno-dev.com',
+  B: 'офферу fullstack',
+  C: 'найму в iGaming',
+}
 
 /** Цвет вероятности по порогам: до 20 — приглушённый, 20–50 — нейтральный, выше 50 — акцентный */
 function valueBand(value: number): 'low' | 'mid' | 'high' {
@@ -70,9 +77,9 @@ export function SkippedPage({ trackId }: { trackId: BuiltinTrackId }) {
   if (!track) return null
 
   const entries = SKIPPED.filter((entry) => entry.track === trackId)
-  const modifier = trackId === 'A' ? 'skipped--a' : 'skipped--b'
-  const otherId: BuiltinTrackId = trackId === 'A' ? 'B' : 'A'
-  const otherRoute = otherId === 'A' ? 'skippedA' : 'skippedB'
+  const modifier = `skipped--${trackId.toLowerCase()}`
+  // ссылки ведут только на те треки, где мимо плана что-то есть: пустая страница сбивает с толку
+  const others = TRACKS.filter((candidate) => candidate.id !== trackId && SKIPPED.some((entry) => entry.track === candidate.id))
 
   return (
     <main className={`skipped ${modifier}`}>
@@ -82,7 +89,7 @@ export function SkippedPage({ trackId }: { trackId: BuiltinTrackId }) {
         <p className="section-lead">
           Всё из библиотеки, что не стало шагом трека — {entries.length} курсов. У каждого — вероятность, что он реально понадобится за два года,
           и условие, при котором к нему стоит вернуться. Считается не «хороший ли курс», а приближает ли он к{' '}
-          {trackId === 'A' ? 'заказам по стеку verno-dev.com' : 'офферу fullstack'}.
+          {GOAL_LABEL[trackId]}.
         </p>
       </header>
 
@@ -113,8 +120,12 @@ export function SkippedPage({ trackId }: { trackId: BuiltinTrackId }) {
 
       <p className="skipped__other">
         <a href={ROUTE_META[trackId].hash}>← Трек {track.id}</a>
-        <span aria-hidden="true"> · </span>
-        <a href={ROUTE_META[otherRoute].hash}>Мимо плана в треке {otherId} →</a>
+        {others.map((candidate) => (
+          <span key={candidate.id}>
+            <span aria-hidden="true"> · </span>
+            <a href={ROUTE_META[skippedRouteOf(candidate.id as BuiltinTrackId)].hash}>Мимо плана в треке {candidate.id} →</a>
+          </span>
+        ))}
       </p>
     </main>
   )

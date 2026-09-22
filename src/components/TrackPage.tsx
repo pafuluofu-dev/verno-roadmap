@@ -1,4 +1,4 @@
-import { TRACKS, type Item, type Track } from '../data'
+import { SKIPPED, TRACKS, type Item, type Track } from '../data'
 import { shareOf, type DoneMap, type Plan, type ProgressMap, type Settings, type SkippedMap } from '../schedule'
 import type { PlanEdits } from '../planEdits'
 import { ROUTE_META, skippedRouteOf } from '../router'
@@ -63,7 +63,7 @@ export function TrackPage({ track, tracks, plan, done, skipped, settings, progre
         onEdits={onEdits}
       />
       <LoadChart plan={plan} settings={settings} tracks={tracks} only={track.id} />
-      {builtinId && (
+      {builtinId && SKIPPED.some((entry) => entry.track === builtinId) && (
         <p className="track-page__other">
           Что из библиотеки не попало в этот трек и стоит ли возвращаться:{' '}
           <a href={ROUTE_META[skippedRouteOf(builtinId)].hash}>мимо плана — трек {builtinId}</a>

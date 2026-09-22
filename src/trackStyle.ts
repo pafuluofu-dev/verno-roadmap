@@ -1,9 +1,9 @@
 import type { Track } from './data'
 
-/** Встроенные треки — A и B; всё остальное — свои треки владельца */
-export const isBuiltinTrack = (id: string): boolean => id === 'A' || id === 'B'
+/** Встроенные треки — A, B и C; всё остальное — свои треки владельца */
+export const isBuiltinTrack = (id: string): boolean => id === 'A' || id === 'B' || id === 'C'
 
-/** Буква цветовой схемы: у своих треков один общий третий цвет */
+/** Буква цветовой схемы: трек C и свои треки владельца делят третий цвет */
 export function trackLetter(id: string): 'a' | 'b' | 'c' {
   if (id === 'A') return 'a'
   if (id === 'B') return 'b'

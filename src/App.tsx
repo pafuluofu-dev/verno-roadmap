@@ -324,7 +324,8 @@ export default function App() {
                   <h2 id="skipped-links-title">Мимо плана</h2>
                   <p className="section-lead">
                     Курсы из библиотеки, которые не стали шагами, — с вероятностью, что понадобятся, и условием возврата:{' '}
-                    <a href={ROUTE_META.skippedA.hash}>фриланс</a> · <a href={ROUTE_META.skippedB.hash}>fullstack</a>.
+                    <a href={ROUTE_META.skippedA.hash}>фриланс</a> · <a href={ROUTE_META.skippedB.hash}>fullstack</a> ·{' '}
+                    <a href={ROUTE_META.skippedC.hash}>iGaming</a>.
                   </p>
                 </div>
               </section>
@@ -338,8 +339,8 @@ export default function App() {
           <Suspense fallback={<p className="page-loading">Строю дерево…</p>}>
             <TreePage plan={plan} tracks={allTracks} done={done} skipped={skipped} settings={settings} />
           </Suspense>
-        ) : page === 'skippedA' || page === 'skippedB' ? (
-          <SkippedPage trackId={page === 'skippedA' ? 'A' : 'B'} />
+        ) : page === 'skippedA' || page === 'skippedB' || page === 'skippedC' ? (
+          <SkippedPage trackId={page === 'skippedA' ? 'A' : page === 'skippedB' ? 'B' : 'C'} />
         ) : routeTrack ? (
           <TrackPage
             key={routeTrack.id}

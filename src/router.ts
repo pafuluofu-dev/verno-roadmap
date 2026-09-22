@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import type { BuiltinTrackId, Track } from './data'
 
 /** Страницы «мимо плана» — по одной на встроенный трек */
-export type SkippedRoute = 'skippedA' | 'skippedB'
+export type SkippedRoute = 'skippedA' | 'skippedB' | 'skippedC'
 export type StaticRoute = 'home' | BuiltinTrackId | SkippedRoute | 'notebook' | 'tree'
 /** Страница своего трека: track:<id> */
 export type TrackRoute = `track:${string}`
@@ -12,18 +12,20 @@ export const ROUTE_META: Record<StaticRoute, { hash: string; title: string }> = 
   home: { hash: '#/', title: 'Маршрут verno/dev' },
   A: { hash: '#/track-a', title: 'Трек A — фриланс · Маршрут verno/dev' },
   B: { hash: '#/track-b', title: 'Трек B — fullstack · Маршрут verno/dev' },
+  C: { hash: '#/track-c', title: 'Трек C — iGaming · Маршрут verno/dev' },
   skippedA: { hash: '#/skipped-a', title: 'Мимо плана — фриланс · Маршрут verno/dev' },
   skippedB: { hash: '#/skipped-b', title: 'Мимо плана — fullstack · Маршрут verno/dev' },
+  skippedC: { hash: '#/skipped-c', title: 'Мимо плана — iGaming · Маршрут verno/dev' },
   notebook: { hash: '#/notebook', title: 'Заметки — Маршрут verno/dev' },
   tree: { hash: '#/tree', title: 'Дерево — Маршрут verno/dev' },
 }
 
-export const skippedRouteOf = (track: BuiltinTrackId): SkippedRoute => (track === 'A' ? 'skippedA' : 'skippedB')
+export const skippedRouteOf = (track: BuiltinTrackId): SkippedRoute => (track === 'A' ? 'skippedA' : track === 'B' ? 'skippedB' : 'skippedC')
 
 const TRACK_HASH_PREFIX = '#/track/'
 const TRACK_ROUTE_PREFIX = 'track:'
 
-const isBuiltin = (id: string): id is BuiltinTrackId => id === 'A' || id === 'B'
+const isBuiltin = (id: string): id is BuiltinTrackId => id === 'A' || id === 'B' || id === 'C'
 const isStaticRoute = (route: Route): route is StaticRoute => route in ROUTE_META
 
 /** Адрес страницы трека: встроенные — как раньше, свои — #/track/<id> */
@@ -50,9 +52,11 @@ function parseHash(hash: string): Route {
   if (hash.startsWith(ROUTE_META.tree.hash)) return 'tree'
   if (hash.startsWith(ROUTE_META.skippedA.hash)) return 'skippedA'
   if (hash.startsWith(ROUTE_META.skippedB.hash)) return 'skippedB'
+  if (hash.startsWith(ROUTE_META.skippedC.hash)) return 'skippedC'
   if (hash.startsWith(TRACK_HASH_PREFIX)) return `${TRACK_ROUTE_PREFIX}${hash.slice(TRACK_HASH_PREFIX.length)}`
   if (hash.startsWith(ROUTE_META.A.hash)) return 'A'
   if (hash.startsWith(ROUTE_META.B.hash)) return 'B'
+  if (hash.startsWith(ROUTE_META.C.hash)) return 'C'
   return 'home'
 }
 
