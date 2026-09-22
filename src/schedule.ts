@@ -1,8 +1,10 @@
 import { ITEMS, TRACKS, UNI_DATE, type Item, type Track } from './data'
 
 export interface Settings {
-  /** ISO-дата старта расписания */
+  /** ISO-дата старта расписания — общая, и она же по умолчанию для треков без своей */
   start: string
+  /** id трека → своя ISO-дата старта. Трека нет в объекте — начинает вместе с планом */
+  trackStart: Record<string, string>
   /** Часов в неделю на курсы, пока академ */
   hoursBefore: number
   /** Часов в неделю после возвращения в вуз */
@@ -15,6 +17,7 @@ export interface Settings {
 
 export const DEFAULT_SETTINGS: Settings = {
   start: todayISO(),
+  trackStart: {},
   hoursBefore: 40,
   hoursAfter: 25,
   shareA: 70,
@@ -145,7 +148,13 @@ export function buildPlan(
   items: Item[] = ITEMS,
   tracks: Track[] = TRACKS,
 ): Plan {
-  const start = parseISO(settings.start)
+  const planStart = parseISO(settings.start)
+  const startOf = (t: string) => {
+    const own = settings.trackStart?.[t]
+    return own && /^\d{4}-\d{2}-\d{2}$/.test(own) ? parseISO(own) : planStart
+  }
+  // Сетка недель идёт от самой ранней даты: трек может начинаться и раньше общего старта
+  const start = new Date(Math.min(planStart.getTime(), ...tracks.map((track) => startOf(track.id).getTime())))
   const uni = parseISO(UNI_DATE)
   const share = Math.min(100, Math.max(0, settings.shareA)) / 100
   const ids = tracks.map((track) => track.id)
@@ -196,8 +205,12 @@ export function buildPlan(
       cursor[t]++
     }
   }
-  /** Трек ждёт чужой шаг: часы недели ему не нужны, их заберут остальные */
-  const waiting = (t: string) => {
+  /** Трек ещё не начался: в дело он вступает с недели, которая начинается не раньше его даты,
+      иначе шаг мог бы закрыться числом раньше собственного старта */
+  const notStarted = (t: string, weekStart: Date) => weekStart < startOf(t)
+  /** Трек ждёт чужой шаг или своей даты: часы недели ему не нужны, их заберут остальные */
+  const waiting = (t: string, weekStart: Date) => {
+    if (notStarted(t, weekStart)) return true
     const p = queues[t][cursor[t]]
     return p ? blocked(p) : false
   }
@@ -215,12 +228,15 @@ export function buildPlan(
     const hoursA = capacity * share
     const nominal: Record<string, number> = {}
     for (const t of ids) nominal[t] = t === 'A' ? hoursA : (capacity - hoursA) / others
-    const active = ids.filter((t) => remainingOf(t) > 0 && !waiting(t))
+    const active = ids.filter((t) => remainingOf(t) > 0 && !waiting(t, weekStart))
     const budgets: Record<string, number> = {}
     for (const t of ids) budgets[t] = 0
     if (active.length === 0) {
-      // все оставшиеся треки ждут чужих шагов — такого быть не должно, но цикл крутить незачем
-      break
+      // Ждут своей даты — это лечится временем, просто листаем неделю дальше.
+      // Ждут чужого шага, который уже не придёт, — крутить цикл незачем.
+      if (!ids.some((t) => remainingOf(t) > 0 && notStarted(t, weekStart))) break
+      week++
+      continue
     } else if (active.length === 1) {
       // единственный незакрытый трек забирает всю неделю
       budgets[active[0]] = capacity
@@ -235,6 +251,10 @@ export function buildPlan(
     for (const t of ids) {
       let budget = budgets[t]
       const trackCapacity = budgets[t]
+      if (budget <= 0) {
+        consumed[t] = 0
+        continue
+      }
       const q = queues[t]
       while (budget > 0 && cursor[t] < q.length) {
         const p = q[cursor[t]]

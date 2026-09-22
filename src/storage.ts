@@ -341,10 +341,22 @@ export function saveCustomTracks(tracks: Track[]): void {
   }
 }
 
+/* Свои даты старта треков: пропускаем только пары «id трека → ISO-дата». Ключи не проверяем
+   по списку треков — свой трек владельца тоже имеет право на свою дату. */
+function sanitizeTrackStart(raw: unknown): Record<string, string> {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {}
+  const out: Record<string, string> = {}
+  for (const [id, value] of Object.entries(raw as Record<string, unknown>)) {
+    if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) out[id] = value
+  }
+  return out
+}
+
 export function sanitizeSettings(parsed: Partial<Settings> | null | undefined): Settings {
   if (!parsed || typeof parsed !== 'object') return DEFAULT_SETTINGS
   return {
     start: typeof parsed.start === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(parsed.start) ? parsed.start : DEFAULT_SETTINGS.start,
+    trackStart: sanitizeTrackStart(parsed.trackStart),
     hoursBefore: clamp(Number(parsed.hoursBefore), 1, 80, DEFAULT_SETTINGS.hoursBefore),
     hoursAfter: clamp(Number(parsed.hoursAfter), 1, 80, DEFAULT_SETTINGS.hoursAfter),
     shareA: clamp(Number(parsed.shareA), 0, 100, DEFAULT_SETTINGS.shareA),

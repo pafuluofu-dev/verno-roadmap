@@ -1,6 +1,7 @@
 import type { CSSProperties } from 'react'
 import type { Track } from '../data'
 import { DEFAULT_SETTINGS, type Settings } from '../schedule'
+import { trackLabel } from '../trackStyle'
 
 interface ScheduleControlsProps {
   settings: Settings
@@ -49,7 +50,7 @@ export function ScheduleControls({ settings, tracks, onChange, onResetProgress }
       <fieldset className="schedule-controls__fields">
         <legend className="visually-hidden">Темп и старт</legend>
         <p className="schedule-controls__field">
-          <label className="schedule-controls__label" htmlFor="start-date">Старт</label>
+          <label className="schedule-controls__label" htmlFor="start-date">Старт плана</label>
           <input
             id="start-date"
             className="schedule-controls__input"
@@ -58,6 +59,26 @@ export function ScheduleControls({ settings, tracks, onChange, onResetProgress }
             onChange={(event) => event.target.value && update({ start: event.target.value })}
           />
         </p>
+        {tracks.map((track) => (
+          <p className="schedule-controls__field" key={track.id}>
+            <label className="schedule-controls__label" htmlFor={`start-${track.id}`}>
+              Старт {trackLabel(track).toLowerCase()}
+            </label>
+            <input
+              id={`start-${track.id}`}
+              className="schedule-controls__input"
+              type="date"
+              value={settings.trackStart[track.id] ?? ''}
+              /* Пусто — трек идёт от старта плана; дата — своя. Очистка поля возвращает к общей. */
+              onChange={(event) => {
+                const next = { ...settings.trackStart }
+                if (event.target.value) next[track.id] = event.target.value
+                else delete next[track.id]
+                update({ trackStart: next })
+              }}
+            />
+          </p>
+        ))}
         <p className="schedule-controls__field">
           <label className="schedule-controls__label" htmlFor="hours-before">ч/нед до 9 фев 2027</label>
           <input
