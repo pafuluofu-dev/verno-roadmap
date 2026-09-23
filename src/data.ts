@@ -266,7 +266,7 @@ export const ITEMS: Item[] = [
     value: 95,
     units: 507,
     unitWord: 'шагов',
-    unitsDone: 35,
+    unitsDone: 48,
     url: 'https://stepik.org/course/123120',
   },
   {
