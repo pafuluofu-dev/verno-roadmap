@@ -508,15 +508,27 @@ function ValueBadge({ value }: { value?: number }) {
   )
 }
 
-function StepSource({ url }: { url?: string }) {
-  if (!url) return null
+/** Источники шага: основной материал и, если он есть, разбор темы на видео */
+function StepSource({ item }: { item: Item }) {
+  const links: { url: string; label: string }[] = []
+  if (item.url) links.push({ url: item.url, label: sourceLabel(item.url) })
+  if (item.videoUrl) {
+    links.push({ url: item.videoUrl, label: item.videoTitle ? `Видео: ${item.videoTitle}` : sourceLabel(item.videoUrl) })
+  }
+  if (!links.length) return null
+
   return (
     <p className="step__source">
-      <a className="step__source-link" href={url} target="_blank" rel="noopener noreferrer">
-        {sourceLabel(url)}
-        <span aria-hidden="true"> ↗</span>
-        <span className="visually-hidden"> (откроется в новой вкладке)</span>
-      </a>
+      {links.map((link, i) => (
+        <span key={link.url}>
+          {i > 0 && ' · '}
+          <a className="step__source-link" href={link.url} target="_blank" rel="noopener noreferrer">
+            {link.label}
+            <span aria-hidden="true"> ↗</span>
+            <span className="visually-hidden"> (откроется в новой вкладке)</span>
+          </a>
+        </span>
+      ))}
     </p>
   )
 }
@@ -585,7 +597,7 @@ function StepItem({ step, checked, scheduled, isSkipped, unitsCompleted, onToggl
           <span className="badge badge--skipped">отложено</span>
           <ValueBadge value={item.value} />
         </p>
-        <StepSource url={item.url} />
+        <StepSource item={item} />
         <p className="step__hours">
           <span className="step__hours-value">{fmtHours(item.hours)} ч</span>
           <button type="button" className="link-button step__defer" onClick={() => onSkip(item.id)}>
@@ -620,7 +632,7 @@ function StepItem({ step, checked, scheduled, isSkipped, unitsCompleted, onToggl
         {item.optional && <span className="badge badge--optional">по желанию</span>}
         <ValueBadge value={item.value} />
       </label>
-      <StepSource url={item.url} />
+      <StepSource item={item} />
       <details className="step__details">
         <summary className="step__details-summary">что именно проходить</summary>
         <p className="step__note" id={noteId}>{item.note}</p>
