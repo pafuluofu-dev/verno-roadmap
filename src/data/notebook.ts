@@ -8,6 +8,7 @@ import outreachDoc from './notebook/outreach.md?raw'
 import cvDoc from './notebook/cv-two.md?raw'
 import queriesDoc from './notebook/job-search.md?raw'
 import photoOps from './notebook/photo-five-ops.md?raw'
+import marketDoc from './notebook/market-frontend-fullstack.md?raw'
 
 /** Своя заметка владельца: Markdown-подмножество плюс формулы $…$ и $$…$$ */
 export interface UserNote {
@@ -86,6 +87,13 @@ export const SEED_NOTES: UserNote[] = [
     body: photoOps,
     createdAt: '2026-09-24',
     updatedAt: '2026-09-24',
+  },
+  {
+    id: 'seed-market-frontend-fullstack',
+    title: 'Что просят в вакансиях hh.ru: frontend и fullstack, 27.09.2026',
+    body: marketDoc,
+    createdAt: '2026-09-27',
+    updatedAt: '2026-09-27',
   },
   {
     id: 'seed-job-search',
