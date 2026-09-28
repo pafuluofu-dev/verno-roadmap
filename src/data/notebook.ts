@@ -9,6 +9,8 @@ import cvDoc from './notebook/cv-two.md?raw'
 import queriesDoc from './notebook/job-search.md?raw'
 import photoOps from './notebook/photo-five-ops.md?raw'
 import eventLoop from './notebook/event-loop.md?raw'
+import closures from './notebook/closures.md?raw'
+import prototypes from './notebook/prototypes.md?raw'
 
 /** Своя заметка владельца: Markdown-подмножество плюс формулы $…$ и $$…$$ */
 export interface UserNote {
@@ -99,6 +101,20 @@ export const SEED_NOTES: UserNote[] = [
     id: 'seed-event-loop',
     title: 'Event loop в JavaScript: две очереди и что из-за них ломается',
     body: eventLoop,
+    createdAt: '2026-09-29',
+    updatedAt: '2026-09-29',
+  },
+  {
+    id: 'seed-closures',
+    title: 'Замыкания: что держит функция и когда читается значение',
+    body: closures,
+    createdAt: '2026-09-29',
+    updatedAt: '2026-09-29',
+  },
+  {
+    id: 'seed-prototypes',
+    title: 'Прототипы, class и this: как объект находит то, чего у него нет',
+    body: prototypes,
     createdAt: '2026-09-29',
     updatedAt: '2026-09-29',
   },
